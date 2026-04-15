@@ -13,6 +13,8 @@ tools:
   - TaskUpdate
   - TaskList
   - "mcp__playwright__*"
+skills:
+  - .claude/skills/debug-server.md
 mcpServers:
   playwright:
     command: npx

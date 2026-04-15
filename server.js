@@ -1,3 +1,4 @@
+require("dotenv").config({ quiet: true });
 const express = require("express");
 const path = require("path");
 const Anthropic = require("@anthropic-ai/sdk");
@@ -63,7 +64,7 @@ app.post("/api/consult", async (req, res) => {
 
     res.json({ reply });
   } catch (err) {
-    console.error("Claude API error:", err);
+    console.error("Claude API error:", err.message);
     const statusCode = err.status || 500;
     const errorMessage =
       statusCode === 401
