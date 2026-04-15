@@ -6,17 +6,36 @@ document.addEventListener("DOMContentLoaded", () => {
   const chatMessages = document.getElementById("chat-messages");
   const newConsultationButton = document.getElementById("new-consultation-button");
   const categoryButtons = document.querySelectorAll(".category-button");
+  const modeButtons = document.querySelectorAll(".mode-button");
+  const modeDescription = document.getElementById("mode-description");
   const charCount = document.getElementById("char-count");
 
   const MAX_CHARS = 1000;
   const WARN_THRESHOLD = 900;
 
+  const MODE_DESCRIPTIONS = {
+    default: "共感とアドバイスをバランスよく提供します",
+    empathy: "解決策は提示せず、ひたすら親身に寄り添い傾聴します",
+    solution: "具体的な解決策を一緒に考え、行動の筋道を提案します",
+  };
+
   // Conversation history for Claude API
   let conversationHistory = [];
   let selectedCategory = null;
+  let selectedMode = "default";
 
   // Show welcome message on page load
   showWelcomeMessage();
+
+  // Mode button selection
+  modeButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      modeButtons.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      selectedMode = btn.dataset.mode;
+      modeDescription.textContent = MODE_DESCRIPTIONS[selectedMode];
+    });
+  });
 
   // Category button selection
   categoryButtons.forEach((btn) => {
@@ -73,7 +92,11 @@ document.addEventListener("DOMContentLoaded", () => {
   newConsultationButton.addEventListener("click", () => {
     conversationHistory = [];
     selectedCategory = null;
+    selectedMode = "default";
     categoryButtons.forEach((b) => b.classList.remove("active"));
+    modeButtons.forEach((b) => b.classList.remove("active"));
+    document.querySelector('.mode-button[data-mode="default"]').classList.add("active");
+    modeDescription.textContent = MODE_DESCRIPTIONS.default;
     chatMessages.innerHTML = "";
     showWelcomeMessage();
     updateNewConsultationButton();
@@ -123,6 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({
           messages: conversationHistory,
           category: selectedCategory,
+          mode: selectedMode,
         }),
       });
 

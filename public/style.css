@@ -206,6 +206,65 @@ body {
   border-bottom-left-radius: 4px;
 }
 
+/* Mode Section */
+.mode-section {
+  margin-bottom: 12px;
+}
+
+.mode-label {
+  font-size: 0.85rem;
+  color: var(--color-text-light);
+  margin-bottom: 8px;
+}
+
+.mode-buttons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.mode-button {
+  padding: 8px 18px;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  border: 2px solid var(--color-input-border);
+  border-radius: var(--radius);
+  font-family: var(--font-main);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.mode-button:hover {
+  border-color: var(--color-accent);
+  background-color: #fef0e6;
+}
+
+.mode-button.active[data-mode="default"] {
+  background-color: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
+}
+
+.mode-button.active[data-mode="empathy"] {
+  background-color: #7eb8a8;
+  color: #fff;
+  border-color: #7eb8a8;
+}
+
+.mode-button.active[data-mode="solution"] {
+  background-color: #6b9bd2;
+  color: #fff;
+  border-color: #6b9bd2;
+}
+
+.mode-description {
+  font-size: 0.8rem;
+  color: var(--color-text-light);
+  font-style: italic;
+}
+
 /* Category Section */
 .category-section {
   margin-bottom: 12px;
