@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const categoryButtons = document.querySelectorAll(".category-button");
   const modeButtons = document.querySelectorAll(".mode-button");
   const modeDescription = document.getElementById("mode-description");
+  const themeButtons = document.querySelectorAll(".theme-button");
   const charCount = document.getElementById("char-count");
 
   const MAX_CHARS = 1000;
@@ -23,6 +24,30 @@ document.addEventListener("DOMContentLoaded", () => {
   let conversationHistory = [];
   let selectedCategory = null;
   let selectedMode = "default";
+
+  // Theme selection
+  const savedTheme = localStorage.getItem("theme");
+  if (savedTheme) {
+    document.documentElement.setAttribute("data-theme", savedTheme);
+    themeButtons.forEach((b) => {
+      b.classList.toggle("active", b.dataset.theme === savedTheme);
+    });
+  }
+
+  themeButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      themeButtons.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      const theme = btn.dataset.theme;
+      if (theme === "default") {
+        document.documentElement.removeAttribute("data-theme");
+        localStorage.removeItem("theme");
+      } else {
+        document.documentElement.setAttribute("data-theme", theme);
+        localStorage.setItem("theme", theme);
+      }
+    });
+  });
 
   // Show welcome message on page load
   showWelcomeMessage();
