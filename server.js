@@ -41,15 +41,25 @@ const SYSTEM_PROMPTS = {
 6. 日本語で回答してください。`,
 };
 
-app.post("/api/consult", async (req, res) => {
+function buildConversationContext(req) {
   const { message, messages, category, mode } = req.body;
 
-  // Support both single message (backward compat) and conversation history
   const conversationMessages = messages && Array.isArray(messages) && messages.length > 0
     ? messages
     : message && message.trim() !== ""
       ? [{ role: "user", content: message }]
       : null;
+
+  let systemPrompt = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.default;
+  if (category && typeof category === "string" && category.trim() !== "") {
+    systemPrompt += `\n\n現在のユーザーの相談カテゴリは「${category}」です。このカテゴリに特に関連したアドバイスや視点を意識して回答してください。`;
+  }
+
+  return { conversationMessages, systemPrompt };
+}
+
+app.post("/api/consult", async (req, res) => {
+  const { conversationMessages, systemPrompt } = buildConversationContext(req);
 
   if (!conversationMessages) {
     return res.status(400).json({ error: "相談内容を入力してください。" });
@@ -65,12 +75,6 @@ app.post("/api/consult", async (req, res) => {
 
   try {
     const client = new Anthropic({ apiKey });
-
-    // Build system prompt based on mode
-    let systemPrompt = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.default;
-    if (category && typeof category === "string" && category.trim() !== "") {
-      systemPrompt += `\n\n現在のユーザーの相談カテゴリは「${category}」です。このカテゴリに特に関連したアドバイスや視点を意識して回答してください。`;
-    }
 
     const response = await client.messages.create({
       model: "claude-sonnet-4-20250514",
@@ -93,6 +97,138 @@ app.post("/api/consult", async (req, res) => {
         ? "APIキーが無効です。正しいキーを設定してください。"
         : "AIからの回答を取得できませんでした。しばらくしてからもう一度お試しください。";
     res.status(statusCode).json({ error: errorMessage });
+  }
+});
+
+app.post("/api/consult/stream", async (req, res) => {
+  const { conversationMessages, systemPrompt } = buildConversationContext(req);
+
+  if (!conversationMessages) {
+    res.status(400).json({ error: "相談内容を入力してください。" });
+    return;
+  }
+
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    res.status(500).json({
+      error:
+        "APIキーが設定されていません。環境変数 ANTHROPIC_API_KEY を設定してください。",
+    });
+    return;
+  }
+
+  // Set SSE headers
+  res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+  res.setHeader("Cache-Control", "no-cache, no-transform");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
+  if (typeof res.flushHeaders === "function") {
+    res.flushHeaders();
+  }
+
+  const safeWrite = (chunk) => {
+    if (!res.writableEnded && !res.destroyed) {
+      try {
+        res.write(chunk);
+      } catch (_) {
+        // socket may already be torn down
+      }
+    }
+  };
+
+  const sendEvent = (event, data) => {
+    safeWrite(`event: ${event}\n`);
+    safeWrite(`data: ${JSON.stringify(data)}\n\n`);
+  };
+
+  // Detect true client disconnect via the *response* socket close event.
+  // NOTE: req.on("close") is NOT reliable here — on Express 4 it can fire
+  // immediately once the request body has been fully received, even while
+  // the connection is still open. We use res.on("close") + an AbortController
+  // that we pass to the Anthropic SDK so that the upstream request is
+  // cancelled when the real client goes away.
+  const abortController = new AbortController();
+  let clientAborted = false;
+  const onResClose = () => {
+    if (!res.writableEnded) {
+      clientAborted = true;
+      abortController.abort();
+    }
+  };
+  res.on("close", onResClose);
+
+  // Keep-alive comment helps some proxies flush headers / detect liveness.
+  safeWrite(": ping\n\n");
+
+  let finished = false;
+  try {
+    const client = new Anthropic({ apiKey });
+
+    const stream = client.messages.stream(
+      {
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1024,
+        system: systemPrompt,
+        messages: conversationMessages,
+      },
+      { signal: abortController.signal }
+    );
+
+    for await (const event of stream) {
+      if (clientAborted) break;
+      if (
+        event.type === "content_block_delta" &&
+        event.delta &&
+        event.delta.type === "text_delta" &&
+        typeof event.delta.text === "string" &&
+        event.delta.text.length > 0
+      ) {
+        sendEvent("delta", { text: event.delta.text });
+      }
+    }
+
+    if (!clientAborted) {
+      const finalMessage = await stream.finalMessage();
+      const reply = finalMessage.content
+        .filter((block) => block.type === "text")
+        .map((block) => block.text)
+        .join("\n");
+      sendEvent("done", { reply });
+      finished = true;
+    }
+  } catch (err) {
+    // If the client went away, swallow abort errors quietly.
+    const isAbort =
+      clientAborted ||
+      err?.name === "AbortError" ||
+      err?.code === "ABORT_ERR" ||
+      /aborted/i.test(err?.message || "");
+
+    if (!isAbort) {
+      console.error("Claude API stream error:", err.message);
+      const statusCode = err.status || 500;
+      const errorMessage =
+        statusCode === 401
+          ? "APIキーが無効です。正しいキーを設定してください。"
+          : "AIからの回答を取得できませんでした。しばらくしてからもう一度お試しください。";
+      if (!res.headersSent) {
+        // Headers should already be flushed above, but keep as safety net.
+        res.status(statusCode).json({ error: errorMessage });
+        return;
+      }
+      sendEvent("error", { error: errorMessage });
+    }
+  } finally {
+    res.off("close", onResClose);
+    if (!res.writableEnded) {
+      try {
+        res.end();
+      } catch (_) {
+        // already closed by the transport
+      }
+    }
+    // Suppress unused-var lint if any
+    void finished;
   }
 });
 

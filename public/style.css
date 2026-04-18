@@ -346,6 +346,25 @@ body {
   border-bottom-left-radius: 4px;
 }
 
+/* Streaming Message (inherits .message-ai styling) */
+.message-streaming-content::after {
+  content: "▍";
+  display: inline-block;
+  margin-left: 2px;
+  color: var(--color-accent);
+  animation: blink-cursor 1s steps(2) infinite;
+}
+
+.message-streaming.streaming-done .message-streaming-content::after {
+  content: "";
+  animation: none;
+}
+
+@keyframes blink-cursor {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
 /* Mode Section */
 .mode-section {
   margin-bottom: 12px;

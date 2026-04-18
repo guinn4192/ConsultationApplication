@@ -38,7 +38,23 @@
       "Bash(node -e \"console.log\\(require\\('express/package.json'\\).version\\)\")",
       "Bash(netstat -ano)",
       "Bash(taskkill:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(echo \"started pid: $!\")",
+      "Bash(disown)",
+      "Bash(curl -s -N -X POST http://localhost:3000/api/consult/stream -H 'Content-Type: application/json' -d '{\"message\":\"こんにちは\",\"mode\":\"default\"}' --max-time 30)",
+      "Read(//tmp/**)",
+      "Read(//c//**)",
+      "Bash(findstr :3000)",
+      "Bash(npx playwright *)",
+      "Bash(npx --yes playwright install chromium)",
+      "Bash(ps -W)",
+      "Bash(awk '{print $1}')",
+      "Bash(tee /c/ConsultationApplication/test2_out.log)",
+      "Bash(awk '{print $NF}')",
+      "Read(//c/Users/takut/.claude/**)",
+      "Read(//c/Users/takut/**)",
+      "Bash(cmd //c \"taskkill /F /PID 13984\")"
     ]
   }
 }
