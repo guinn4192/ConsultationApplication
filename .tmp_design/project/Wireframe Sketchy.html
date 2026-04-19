@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>こころの相談室 — 手書き風ワイヤーフレーム</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Klee+One:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Klee One', cursive; background: #f0eee9; }
+
+/* ─── SVG rough filter ─── */
+svg.filters { position: absolute; width: 0; height: 0; }
+
+/* ─── Shared sketchy primitives ─── */
+.sk-body { font-family: 'Klee One', cursive; background: #fdf8f0; height: 100%; display: flex; flex-direction: column; }
+
+/* rough border via SVG filter */
+.rough { filter: url(#rough); }
+
+/* Tweaks panel */
+#tweaks-panel {
+  display: none;
+  position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+  background: #fff8ec; border: 2px solid #c4a97a;
+  border-radius: 12px; padding: 18px 20px;
+  font-family: 'Klee One', cursive; font-size: 14px;
+  box-shadow: 4px 4px 0 #c4a97a;
+  min-width: 220px;
+}
+#tweaks-panel h3 { font-family: 'Caveat', cursive; font-size: 20px; margin-bottom: 12px; color: #5a3e2b; }
+.tw-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 10px; }
+.tw-row label { color: #5a3e2b; }
+.tw-row select, .tw-row input[type=range] { font-family: inherit; border: 1.5px solid #c4a97a; border-radius: 6px; padding: 2px 6px; background: #fff; }
+</style>
+</head>
+<body>
+
+<!-- SVG rough filter definition -->
+<svg class="filters">
+  <defs>
+    <filter id="rough" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="4" seed="2" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="rough-heavy" x="-8%" y="-8%" width="116%" height="116%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.025" numOctaves="3" seed="5" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="pencil" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="turbulence" baseFrequency="0.065" numOctaves="4" seed="8" result="noise"/>
+      <feColorMatrix type="saturate" values="0" in="noise" result="gray"/>
+      <feBlend in="SourceGraphic" in2="gray" mode="multiply" result="blend"/>
+      <feComposite in="blend" in2="SourceGraphic" operator="in"/>
+    </filter>
+  </defs>
+</svg>
+
+<div id="root"></div>
+
+<!-- Tweaks Panel -->
+<div id="tweaks-panel">
+  <h3>✏️ Tweaks</h3>
+  <div class="tw-row">
+    <label>テイスト</label>
+    <select id="tw-variant" onchange="applyTweak()">
+      <option value="A">A: ノート風</option>
+      <option value="B">B: スケッチブック</option>
+      <option value="C">C: インク＆水彩</option>
+    </select>
+  </div>
+  <div class="tw-row">
+    <label>ラフ感</label>
+    <input type="range" id="tw-rough" min="0" max="10" value="3" oninput="applyTweak()">
+  </div>
+  <div class="tw-row">
+    <label>インク色</label>
+    <input type="color" id="tw-ink" value="#3d2b1a" oninput="applyTweak()">
+  </div>
+</div>
+
+<script>
+window.addEventListener('message', e => {
+  if (e.data?.type === '__activate_edit_mode') document.getElementById('tweaks-panel').style.display = 'block';
+  if (e.data?.type === '__deactivate_edit_mode') document.getElementById('tweaks-panel').style.display = 'none';
+});
+window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "variant": "A",
+  "rough": "0",
+  "ink": "#3d2b1a"
+}/*EDITMODE-END*/;
+let tweaks = {...TWEAK_DEFAULTS};
+
+function applyTweak() {
+  tweaks.variant = document.getElementById('tw-variant').value;
+  tweaks.rough = document.getElementById('tw-rough').value;
+  tweaks.ink = document.getElementById('tw-ink').value;
+  window.parent.postMessage({ type: '__edit_mode_set_keys', edits: tweaks }, '*');
+  // re-render is handled by React state in app
+  window._setTweaks && window._setTweaks({...tweaks});
+}
+</script>
+
+<script type="text/babel">
+
+/* ── Sketchy border component using SVG ── */
+function SketchBox({ children, style={}, color='#3d2b1a', fill='transparent', strokeWidth=2, roughness=3, className='', onClick }) {
+  const id = React.useId();
+  const seed = Math.abs(id.charCodeAt(2) || 1);
+  return (
+    <div style={{ position:'relative', ...style }} className={className} onClick={onClick}>
+      <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', overflow:'visible', pointerEvents:'none' }}>
+        <defs>
+          <filter id={`rf-${seed}`}>
+            <feTurbulence type="fractalNoise" baseFrequency={0.02 + roughness*0.003} numOctaves="3" seed={seed}/>
+            <feDisplacementMap in="SourceGraphic" scale={roughness} xChannelSelector="R" yChannelSelector="G"/>
+          </filter>
+        </defs>
+        <rect x="2" y="2" width="calc(100% - 4px)" height="calc(100% - 4px)"
+          rx="4" ry="4"
+          fill={fill} stroke={color} strokeWidth={strokeWidth}
+          filter={`url(#rf-${seed})`}
+          style={{ width:'calc(100% - 4px)', height:'calc(100% - 4px)' }}
+        />
+      </svg>
+      <div style={{ position:'relative', zIndex:1 }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/* ── Wobbly pill/tag ── */
+function SketchPill({ children, color='#3d2b1a', bg='transparent', active=false, style={}, onClick }) {
+  const activeStyle = active ? { background: color, color: '#fff' } : { background: bg, color };
+  return (
+    <button onClick={onClick} style={{
+      fontFamily: "'Caveat', cursive",
+      fontSize: 16,
+      border: `2px solid ${color}`,
+      borderRadius: 20,
+      padding: '4px 14px',
+      cursor: 'pointer',
+      filter: 'url(#rough)',
+      transition: 'all 0.15s',
+      ...activeStyle,
+      ...style,
+    }}>
+      {children}
+    </button>
+  );
+}
+
+/* ── Handwritten underline heading ── */
+function SketchHeading({ children, size=22, color='#3d2b1a', underline=true }) {
+  return (
+    <div style={{ position:'relative', display:'inline-block', marginBottom: underline ? 6 : 0 }}>
+      <span style={{ fontFamily:"'Caveat', cursive", fontSize: size, fontWeight:700, color }}>
+        {children}
+      </span>
+      {underline && (
+        <svg style={{ position:'absolute', bottom:-4, left:0, width:'100%', height:8, overflow:'visible' }}>
+          <defs>
+            <filter id="uf">
+              <feTurbulence type="fractalNoise" baseFrequency="0.08" numOctaves="2" seed="3"/>
+              <feDisplacementMap in="SourceGraphic" scale="2"/>
+            </filter>
+          </defs>
+          <line x1="0" y1="4" x2="100%" y2="4" stroke={color} strokeWidth="2.5" filter="url(#uf)" strokeLinecap="round"/>
+        </svg>
+      )}
+    </div>
+  );
+}
+
+/* ── Scribble textarea ── */
+function SketchTextarea({ placeholder, color='#3d2b1a', rows=3 }) {
+  const [val, setVal] = React.useState('');
+  return (
+    <div style={{ position:'relative' }}>
+      <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', overflow:'visible', pointerEvents:'none', zIndex:0 }}>
+        <defs>
+          <filter id="ta-rf">
+            <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="3" seed="7"/>
+            <feDisplacementMap in="SourceGraphic" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+          </filter>
+        </defs>
+        <rect x="2" y="2" width="calc(100% - 4px)" height="calc(100% - 4px)"
+          rx="6" fill="rgba(255,255,255,0.7)" stroke={color} strokeWidth="2"
+          filter="url(#ta-rf)"
+          style={{ width:'calc(100% - 4px)', height:'calc(100% - 4px)' }}
+        />
+      </svg>
+      <textarea
+        value={val} onChange={e=>setVal(e.target.value)}
+        rows={rows}
+        placeholder={placeholder}
+        style={{
+          position:'relative', zIndex:1,
+          width:'100%', background:'transparent', border:'none', outline:'none',
+          fontFamily:"'Klee One', cursive", fontSize:15, color,
+          lineHeight:1.7, padding:'10px 14px', resize:'vertical',
+        }}
+      />
+    </div>
+  );
+}
+
+/* ── Chat bubble (hand-drawn) ── */
+function SketchBubble({ text, who='ai', color='#3d2b1a', userColor='#c4833a', seed=1 }) {
+  const isUser = who === 'user';
+  const bubbleColor = isUser ? userColor : color;
+  const bg = isUser ? 'rgba(196,131,58,0.08)' : 'rgba(255,255,255,0.6)';
+  return (
+    <div style={{
+      alignSelf: isUser ? 'flex-end' : 'flex-start',
+      maxWidth: '80%',
+      marginBottom: 12,
+    }}>
+      <div style={{
+        fontFamily:"'Klee One', cursive", fontSize:12, color: 'rgba(61,43,26,0.5)',
+        marginBottom:4, textAlign: isUser ? 'right' : 'left',
+        paddingLeft: isUser ? 0 : 4,
+      }}>
+        {isUser ? 'あなた' : 'AIカウンセラー'}
+      </div>
+      <div style={{ position:'relative', padding:'12px 16px', background: bg }}>
+        <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', overflow:'visible', pointerEvents:'none' }}>
+          <defs>
+            <filter id={`brf-${seed}`}>
+              <feTurbulence type="fractalNoise" baseFrequency="0.025" numOctaves="3" seed={seed}/>
+              <feDisplacementMap in="SourceGraphic" scale="3.5" xChannelSelector="R" yChannelSelector="G"/>
+            </filter>
+          </defs>
+          <rect x="2" y="2" width="calc(100% - 4px)" height="calc(100% - 4px)"
+            rx="8" fill={bg} stroke={bubbleColor} strokeWidth="1.8"
+            filter={`url(#brf-${seed})`}
+            style={{ width:'calc(100% - 4px)', height:'calc(100% - 4px)' }}
+          />
+        </svg>
+        <div style={{ position:'relative', fontFamily:"'Klee One', cursive", fontSize:14, color: '#3d2b1a', lineHeight:1.75 }}>
+          {text}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   VARIANT A — ノート風（方眼ノート + 鉛筆）
+═══════════════════════════════════════════════════════ */
+function VariantA({ ink }) {
+  const [mode, setMode] = React.useState('バランス');
+  const [cat, setCat] = React.useState(null);
+
+  const gridBg = `url("data:image/svg+xml,%3Csvg width='28' height='28' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M28 0H0v28' fill='none' stroke='%23c8d8e8' stroke-width='0.7'/%3E%3C/svg%3E")`;
+
+  return (
+    <div style={{ fontFamily:"'Klee One',cursive", background:'#f7f4ee', height:'100%', display:'flex', flexDirection:'column', overflow:'hidden' }}>
+      {/* header — 罫線風 */}
+      <div style={{ background:'#eee8d5', padding:'18px 20px 14px', borderBottom:`3px solid ${ink}`, position:'relative' }}>
+        {/* 穴あけパンチ的な装飾 */}
+        {[16,48,80].map(t=>(
+          <div key={t} style={{ position:'absolute', left:10, top:t, width:14, height:14, borderRadius:'50%', border:`2px solid ${ink}`, background:'#f7f4ee', filter:'url(#rough)' }}/>
+        ))}
+        <div style={{ paddingLeft:32 }}>
+          <SketchHeading size={26} color={ink}>こころの相談室</SketchHeading>
+          <div style={{ fontFamily:"'Caveat',cursive", color:`${ink}99`, fontSize:15, marginTop:4 }}>
+            あなたの悩みに寄り添うAIカウンセラー
+          </div>
+          <div style={{ marginTop:12, display:'flex', gap:8, flexWrap:'wrap' }}>
+            {['🍂','🌊','🌿','🌙','🌸'].map((e,i)=>(
+              <button key={i} style={{ width:32, height:32, borderRadius:'50%', border:`2px solid ${ink}`, background:i===0?ink:'transparent', cursor:'pointer', fontSize:16, filter:'url(#rough)' }}>{e}</button>
+            ))}
+            <button style={{ marginLeft:8, fontFamily:"'Caveat',cursive", fontSize:15, border:`2px dashed ${ink}`, borderRadius:8, padding:'4px 12px', background:'transparent', color:ink, cursor:'pointer', filter:'url(#rough)', opacity:0.5 }}>
+              新しい相談
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* chat area — grid paper */}
+      <div style={{ flex:1, backgroundImage:gridBg, backgroundSize:'28px 28px', overflow:'auto', padding:'20px 24px', display:'flex', flexDirection:'column' }}>
+        <SketchBubble seed={1} text={"こんにちは！「こころの相談室」へようこそ。\n仕事・人間関係・健康など、なんでも気軽に話しかけてください。"} who="ai" color={ink}/>
+        <SketchBubble seed={2} text="最近、職場での人間関係に悩んでいます…" who="user" color={ink}/>
+        <SketchBubble seed={3} text={"そうでしたか、それはつらいですね。\nもう少し詳しく聞かせてもらえますか？"} who="ai" color={ink}/>
+        {/* loading dots */}
+        <div style={{ alignSelf:'flex-start', display:'flex', gap:6, padding:'12px 16px', opacity:0.6 }}>
+          {[0,1,2].map(i=>(
+            <div key={i} style={{ width:8, height:8, borderRadius:'50%', background:ink, animation:`bounce 1.2s ${i*0.2}s ease-in-out infinite` }}/>
+          ))}
+          <style>{`@keyframes bounce { 0%,100%{transform:translateY(0)} 40%{transform:translateY(-6px)} }`}</style>
+        </div>
+      </div>
+
+      {/* input area */}
+      <div style={{ padding:'14px 20px', background:'#eee8d5', borderTop:`2px solid ${ink}` }}>
+        {/* mode */}
+        <div style={{ marginBottom:10 }}>
+          <div style={{ fontFamily:"'Caveat',cursive", fontSize:14, color:`${ink}88`, marginBottom:6 }}>相談モード:</div>
+          <div style={{ display:'flex', gap:8 }}>
+            {['バランス','共感モード','解決モード'].map(m=>(
+              <SketchPill key={m} color={ink} active={mode===m} onClick={()=>setMode(m)}>{m}</SketchPill>
+            ))}
+          </div>
+        </div>
+        {/* category */}
+        <div style={{ marginBottom:10 }}>
+          <div style={{ fontFamily:"'Caveat',cursive", fontSize:14, color:`${ink}88`, marginBottom:6 }}>カテゴリ（任意）:</div>
+          <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+            {['仕事','人間関係','健康','日常生活','恋愛','お金'].map(c=>(
+              <SketchPill key={c} color={ink} active={cat===c} onClick={()=>setCat(cat===c?null:c)} style={{ fontSize:14 }}>{c}</SketchPill>
+            ))}
+          </div>
+        </div>
+        {/* textarea + send */}
+        <div style={{ display:'flex', gap:12, alignItems:'flex-end' }}>
+          <div style={{ flex:1 }}>
+            <SketchTextarea placeholder="お悩みをここに書いてください..." color={ink} rows={3}/>
+            <div style={{ fontFamily:"'Caveat',cursive", fontSize:12, color:`${ink}66`, textAlign:'right', marginTop:4 }}>0 / 1000</div>
+          </div>
+          <SketchBox color={ink} fill={ink} style={{ borderRadius:10 }}>
+            <button style={{ fontFamily:"'Caveat',cursive", fontSize:18, color:'#fff', background:'transparent', border:'none', padding:'10px 20px', cursor:'pointer', fontWeight:700 }}>
+              送信 →
+            </button>
+          </SketchBox>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   VARIANT B — スケッチブック（クラフト紙 + マーカー）
+═══════════════════════════════════════════════════════ */
+function VariantB({ ink }) {
+  const [mode, setMode] = React.useState('バランス');
+  const markerColor = '#e05a2b';
+
+  return (
+    <div style={{ fontFamily:"'Klee One',cursive", background:'#f2ead8', height:'100%', display:'flex', flexDirection:'column' }}>
+      {/* header — thick marker stroke */}
+      <div style={{ padding:'20px 22px 16px', position:'relative', overflow:'visible' }}>
+        {/* big thick underline as header bg */}
+        <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', overflow:'visible', pointerEvents:'none' }}>
+          <defs>
+            <filter id="mk">
+              <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="12"/>
+              <feDisplacementMap in="SourceGraphic" scale="5"/>
+            </filter>
+          </defs>
+          <rect x="0" y="0" width="100%" height="100%" fill="#e8c87a" filter="url(#mk)"/>
+        </svg>
+        <div style={{ position:'relative' }}>
+          <div style={{ fontFamily:"'Caveat',cursive", fontSize:30, fontWeight:700, color:'#2a1a0a', letterSpacing:1 }}>
+            💬 こころの相談室
+          </div>
+          <div style={{ fontFamily:"'Caveat',cursive", fontSize:16, color:'#5a3a1a', marginTop:2 }}>
+            ～ あなたの悩みに寄り添うAIカウンセラー ～
+          </div>
+          <div style={{ marginTop:12, display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
+            {['🍂 ぬくもり','🌊 やすらぎ','🌿 いやし','🌙 よるのしじま','🌸 はなごころ'].map((t,i)=>(
+              <button key={i} style={{
+                fontFamily:"'Caveat',cursive", fontSize:14,
+                border:`2px solid #2a1a0a`, borderRadius:20,
+                padding:'3px 12px', background: i===0?'#2a1a0a':'transparent',
+                color: i===0?'#f2ead8':'#2a1a0a', cursor:'pointer',
+                filter:'url(#rough)',
+              }}>{t}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* chat */}
+      <div style={{ flex:1, overflow:'auto', padding:'18px 22px', display:'flex', flexDirection:'column', background:'#f9f4e8' }}>
+        {/* torn paper lines */}
+        <div style={{ position:'relative', marginBottom:12, padding:'14px 16px', background:'#fff' }}>
+          <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', overflow:'visible', pointerEvents:'none' }}>
+            <rect x="1" y="1" width="calc(100% - 2px)" height="calc(100% - 2px)" rx="3"
+              fill="#fff" stroke="#2a1a0a" strokeWidth="2" filter="url(#rough-heavy)"
+              style={{ width:'calc(100% - 2px)', height:'calc(100% - 2px)' }}/>
+            {/* red margin line */}
+            <line x1="48" y1="0" x2="48" y2="100%" stroke="#f08080" strokeWidth="1.5" opacity="0.6"/>
+          </svg>
+          {/* ruled lines */}
+          {[1,2,3].map(i=>(
+            <svg key={i} style={{ position:'absolute', left:0, width:'100%', pointerEvents:'none', overflow:'visible' }} height="1" top={i*24+10}>
+              <line x1="0" y1={i*24+10} x2="100%" y2={i*24+10} stroke="#c0c8e0" strokeWidth="0.7"/>
+            </svg>
+          ))}
+          <div style={{ position:'relative', paddingLeft:36, fontFamily:"'Klee One',cursive", fontSize:13, lineHeight:1.9, color:'#2a1a0a' }}>
+            <span style={{ position:'absolute', left:4, top:0, fontFamily:"'Caveat',cursive", fontSize:11, color:'#c0c8e0', writingMode:'vertical-rl' }}>AI</span>
+            こんにちは！「こころの相談室」へようこそ。<br/>
+            仕事・人間関係・健康など、なんでも気軽にお話ください。
+          </div>
+        </div>
+
+        {/* user bubble — sticky-note style */}
+        <div style={{ alignSelf:'flex-end', maxWidth:'75%', marginBottom:12 }}>
+          <div style={{ position:'relative', padding:'12px 16px', background:'#fef9c3' }}>
+            <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', overflow:'visible', pointerEvents:'none' }}>
+              <rect x="1" y="1" width="calc(100% - 2px)" height="calc(100% - 2px)"
+                fill="#fef9c3" stroke={markerColor} strokeWidth="2.5" filter="url(#rough)"
+                style={{ width:'calc(100% - 2px)', height:'calc(100% - 2px)' }}/>
+            </svg>
+            <div style={{ position:'relative', fontFamily:"'Klee One',cursive", fontSize:14, color:'#2a1a0a' }}>
+              最近、職場での人間関係に悩んでいます…
+            </div>
+          </div>
+          <div style={{ fontFamily:"'Caveat',cursive", fontSize:12, color:'#9a7a4a', textAlign:'right', marginTop:3 }}>あなた</div>
+        </div>
+
+        <div style={{ alignSelf:'flex-start', maxWidth:'75%', marginBottom:12 }}>
+          <div style={{ position:'relative', padding:'12px 16px' }}>
+            <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', overflow:'visible', pointerEvents:'none' }}>
+              <rect x="1" y="1" width="calc(100% - 2px)" height="calc(100% - 2px)"
+                fill="#fff" stroke="#2a1a0a" strokeWidth="2" filter="url(#rough)"
+                style={{ width:'calc(100% - 2px)', height:'calc(100% - 2px)' }}/>
+            </svg>
+            <div style={{ position:'relative', fontFamily:"'Klee One',cursive", fontSize:14, color:'#2a1a0a', lineHeight:1.75 }}>
+              それはつらいですね…<br/>もう少し聞かせてもらえますか？
+            </div>
+          </div>
+          <div style={{ fontFamily:"'Caveat',cursive", fontSize:12, color:'#9a7a4a', marginTop:3 }}>AIカウンセラー</div>
+        </div>
+      </div>
+
+      {/* input */}
+      <div style={{ padding:'16px 22px', background:'#e8dfc0', borderTop:`3px solid #2a1a0a`, filter:'url(#rough)' }}>
+        <div style={{ filter:'url(#rough)', marginBottom:10 }}>
+          {/* mode tabs drawn as notebook tabs */}
+          <div style={{ display:'flex', gap:0, marginBottom:12 }}>
+            {['バランス','共感モード','解決モード'].map((m,i)=>(
+              <button key={m} style={{
+                fontFamily:"'Caveat',cursive", fontSize:16,
+                padding:'6px 18px',
+                background: mode===m ? '#f9f4e8' : 'transparent',
+                border:`2px solid #2a1a0a`,
+                borderBottom: mode===m ? '2px solid #f9f4e8' : '2px solid #2a1a0a',
+                borderRight: i<2 ? 'none' : '2px solid #2a1a0a',
+                cursor:'pointer', color:'#2a1a0a',
+                fontWeight: mode===m ? 700 : 400,
+              }} onClick={()=>setMode(m)}>{m}</button>
+            ))}
+          </div>
+          <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:10 }}>
+            {['仕事','人間関係','健康','日常生活','恋愛','お金'].map(c=>(
+              <button key={c} style={{
+                fontFamily:"'Caveat',cursive", fontSize:15,
+                border:`2px dashed #2a1a0a`, borderRadius:20,
+                padding:'3px 14px', background:'transparent', color:'#2a1a0a', cursor:'pointer',
+              }}>{c}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{ display:'flex', gap:12, alignItems:'flex-end' }}>
+          <div style={{ flex:1, position:'relative' }}>
+            <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', overflow:'visible', pointerEvents:'none' }}>
+              <rect x="2" y="2" width="calc(100% - 4px)" height="calc(100% - 4px)"
+                fill="#fff" stroke="#2a1a0a" strokeWidth="2.5" filter="url(#rough-heavy)"
+                style={{ width:'calc(100% - 4px)', height:'calc(100% - 4px)' }}/>
+            </svg>
+            <textarea rows={3} placeholder="お悩みをここに書いてください..." style={{
+              position:'relative', zIndex:1, width:'100%', background:'transparent',
+              border:'none', outline:'none', fontFamily:"'Klee One',cursive", fontSize:15,
+              color:'#2a1a0a', lineHeight:1.7, padding:'10px 14px', resize:'vertical',
+            }}/>
+          </div>
+          <div style={{ position:'relative' }}>
+            <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', overflow:'visible', pointerEvents:'none' }}>
+              <rect x="2" y="2" width="calc(100% - 4px)" height="calc(100% - 4px)"
+                fill={markerColor} stroke="#2a1a0a" strokeWidth="2" filter="url(#rough)"
+                style={{ width:'calc(100% - 4px)', height:'calc(100% - 4px)' }}/>
+            </svg>
+            <button style={{ position:'relative', fontFamily:"'Caveat',cursive", fontSize:19, fontWeight:700, color:'#fff', background:'transparent', border:'none', padding:'12px 22px', cursor:'pointer' }}>
+              送信 ✏️
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   VARIANT C — インク水彩（にじみ + 毛筆タッチ）
+═══════════════════════════════════════════════════════ */
+function VariantC({ ink }) {
+  const [mode, setMode] = React.useState('バランス');
+  const accent = '#7b4ea0';
+
+  return (
+    <div style={{ fontFamily:"'Klee One',cursive", background:'#faf7f2', height:'100%', display:'flex', flexDirection:'column' }}>
+      {/* header — watercolor wash */}
+      <div style={{ padding:'20px 24px 16px', position:'relative' }}>
+        <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', overflow:'visible', pointerEvents:'none' }}>
+          <defs>
+            <filter id="wc">
+              <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="5" seed="20"/>
+              <feDisplacementMap in="SourceGraphic" scale="12"/>
+            </filter>
+            <linearGradient id="header-wash" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#d4b8e8" stopOpacity="0.5"/>
+              <stop offset="100%" stopColor="#f0c8d8" stopOpacity="0.4"/>
+            </linearGradient>
+          </defs>
+          <rect x="0" y="0" width="100%" height="100%" fill="url(#header-wash)" filter="url(#wc)"/>
+        </svg>
+        <div style={{ position:'relative' }}>
+          <div style={{ fontFamily:"'Caveat',cursive", fontSize:28, fontWeight:700, color:'#3a2050', letterSpacing:2 }}>
+            こころの相談室
+          </div>
+          <div style={{ fontFamily:"'Klee One',cursive", fontSize:13, color:`${accent}99`, marginTop:2 }}>
+            あなたの悩みに寄り添うAIカウンセラー
+          </div>
+          <div style={{ marginTop:12, display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
+            {['🍂','🌊','🌿','🌙','🌸'].map((e,i)=>(
+              <button key={i} style={{
+                width:34, height:34, borderRadius:'50%', fontSize:17,
+                border: i===0 ? `3px solid ${accent}` : '2px dashed #c0a0d0',
+                background: i===0 ? 'rgba(123,78,160,0.1)' : 'transparent',
+                cursor:'pointer', filter:'url(#rough)',
+              }}>{e}</button>
+            ))}
+            <button style={{
+              fontFamily:"'Caveat',cursive", fontSize:14,
+              border:`2px solid ${accent}`, borderRadius:16,
+              padding:'4px 14px', background:'transparent', color:accent, cursor:'pointer',
+              filter:'url(#rough)', opacity:0.5, marginLeft:6,
+            }}>新しい相談を始める</button>
+          </div>
+        </div>
+      </div>
+
+      {/* chat */}
+      <div style={{ flex:1, overflow:'auto', padding:'18px 24px', display:'flex', flexDirection:'column' }}>
+        {/* AI message — watercolor speech bubble */}
+        <div style={{ alignSelf:'flex-start', maxWidth:'82%', marginBottom:16 }}>
+          <div style={{ fontFamily:"'Caveat',cursive", fontSize:12, color:'#9a7ab0', marginBottom:4 }}>AIカウンセラー</div>
+          <div style={{ position:'relative', padding:'14px 18px' }}>
+            <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', overflow:'visible', pointerEvents:'none' }}>
+              <defs>
+                <filter id="wc2">
+                  <feTurbulence type="fractalNoise" baseFrequency="0.025" numOctaves="4" seed="3"/>
+                  <feDisplacementMap in="SourceGraphic" scale="6"/>
+                </filter>
+              </defs>
+              <rect x="2" y="2" width="calc(100% - 4px)" height="calc(100% - 4px)"
+                rx="12" fill="rgba(200,180,230,0.2)" stroke={accent} strokeWidth="1.8"
+                filter="url(#wc2)"
+                style={{ width:'calc(100% - 4px)', height:'calc(100% - 4px)' }}/>
+            </svg>
+            <div style={{ position:'relative', fontFamily:"'Klee One',cursive", fontSize:14, color:'#3a2050', lineHeight:1.85 }}>
+              こんにちは！「こころの相談室」へようこそ。<br/>
+              どんなことでも、気軽にお話ください。
+            </div>
+          </div>
+        </div>
+
+        {/* user message */}
+        <div style={{ alignSelf:'flex-end', maxWidth:'78%', marginBottom:16 }}>
+          <div style={{ fontFamily:"'Caveat',cursive", fontSize:12, color:'#9a7ab0', marginBottom:4, textAlign:'right' }}>あなた</div>
+          <div style={{ position:'relative', padding:'12px 16px' }}>
+            <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', overflow:'visible', pointerEvents:'none' }}>
+              <rect x="2" y="2" width="calc(100% - 4px)" height="calc(100% - 4px)"
+                rx="10" fill="rgba(240,200,216,0.3)" stroke="#c06080" strokeWidth="1.8"
+                filter="url(#wc2)"
+                style={{ width:'calc(100% - 4px)', height:'calc(100% - 4px)' }}/>
+            </svg>
+            <div style={{ position:'relative', fontFamily:"'Klee One',cursive", fontSize:14, color:'#3a1030', lineHeight:1.8 }}>
+              最近、職場での人間関係に悩んでいます…
+            </div>
+          </div>
+        </div>
+
+        <div style={{ alignSelf:'flex-start', maxWidth:'82%' }}>
+          <div style={{ fontFamily:"'Caveat',cursive", fontSize:12, color:'#9a7ab0', marginBottom:4 }}>AIカウンセラー</div>
+          <div style={{ position:'relative', padding:'14px 18px' }}>
+            <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', overflow:'visible', pointerEvents:'none' }}>
+              <rect x="2" y="2" width="calc(100% - 4px)" height="calc(100% - 4px)"
+                rx="12" fill="rgba(200,180,230,0.2)" stroke={accent} strokeWidth="1.8"
+                filter="url(#wc2)"
+                style={{ width:'calc(100% - 4px)', height:'calc(100% - 4px)' }}/>
+            </svg>
+            <div style={{ position:'relative', fontFamily:"'Klee One',cursive", fontSize:14, color:'#3a2050', lineHeight:1.85 }}>
+              そうでしたか、それはつらいですね。<br/>もう少し聞かせてもらえますか？
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* input */}
+      <div style={{ padding:'16px 24px', background:'rgba(200,180,230,0.1)', borderTop:`2px solid ${accent}`, filter:'url(#rough)' }}>
+        <div style={{ marginBottom:10 }}>
+          <div style={{ display:'flex', gap:8, marginBottom:8, flexWrap:'wrap' }}>
+            {['バランス','共感モード','解決モード'].map(m=>(
+              <button key={m} onClick={()=>setMode(m)} style={{
+                fontFamily:"'Caveat',cursive", fontSize:16,
+                border: `2px solid ${accent}`,
+                borderRadius:20,
+                padding:'4px 16px',
+                background: mode===m ? accent : 'transparent',
+                color: mode===m ? '#fff' : accent,
+                cursor:'pointer', filter:'url(#rough)',
+              }}>{m}</button>
+            ))}
+          </div>
+          <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:10 }}>
+            {['仕事','人間関係','健康','日常生活','恋愛','お金'].map(c=>(
+              <button key={c} style={{
+                fontFamily:"'Caveat',cursive", fontSize:14,
+                border:`1.8px dashed #c0a0d0`, borderRadius:16,
+                padding:'3px 12px', background:'transparent', color:'#7a5a90', cursor:'pointer',
+                filter:'url(#rough)',
+              }}>{c}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{ display:'flex', gap:12, alignItems:'flex-end' }}>
+          <div style={{ flex:1, position:'relative' }}>
+            <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', overflow:'visible', pointerEvents:'none' }}>
+              <rect x="2" y="2" width="calc(100% - 4px)" height="calc(100% - 4px)"
+                rx="8" fill="rgba(255,255,255,0.8)" stroke={accent} strokeWidth="2"
+                filter="url(#wc2)"
+                style={{ width:'calc(100% - 4px)', height:'calc(100% - 4px)' }}/>
+            </svg>
+            <textarea rows={3} placeholder="お悩みをここに書いてください..." style={{
+              position:'relative', zIndex:1, width:'100%', background:'transparent',
+              border:'none', outline:'none', fontFamily:"'Klee One',cursive", fontSize:14,
+              color:'#3a2050', lineHeight:1.75, padding:'10px 14px', resize:'vertical',
+            }}/>
+          </div>
+          <div style={{ position:'relative' }}>
+            <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', overflow:'visible', pointerEvents:'none' }}>
+              <rect x="2" y="2" width="calc(100% - 4px)" height="calc(100% - 4px)"
+                rx="10" fill={accent} stroke="#3a2050" strokeWidth="2"
+                filter="url(#wc2)"
+                style={{ width:'calc(100% - 4px)', height:'calc(100% - 4px)' }}/>
+            </svg>
+            <button style={{ position:'relative', fontFamily:"'Caveat',cursive", fontSize:19, fontWeight:700, color:'#fff', background:'transparent', border:'none', padding:'12px 22px', cursor:'pointer' }}>
+              送信
+            </button>
+          </div>
+        </div>
+        <div style={{ fontFamily:"'Caveat',cursive", fontSize:12, color:'#9a7ab0', textAlign:'right', marginTop:4 }}>0 / 1000</div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════
+   Main App
+════════════════════════════════ */
+function App() {
+  const [tweaks, setTweaks] = React.useState({.../*EDITMODE-BEGIN*/{"variant":"A","rough":3,"ink":"#3d2b1a"}/*EDITMODE-END*/});
+  window._setTweaks = setTweaks;
+
+  const ink = tweaks.ink || '#3d2b1a';
+
+  const variants = [
+    { id:'A', label:'A: ノート風', sub:'方眼ノート＋鉛筆タッチ', Comp: VariantA },
+    { id:'B', label:'B: スケッチブック', sub:'クラフト紙＋マーカー', Comp: VariantB },
+    { id:'C', label:'C: インク＋水彩', sub:'にじみ感のある柔らかいトーン', Comp: VariantC },
+  ];
+
+  return (
+    <DesignCanvas>
+      <DCSection title="こころの相談室 — 手書き風デザイン案" subtitle="3パターンのスケッチスタイル。ピンチ・スクロールで拡大縮小・パンができます。">
+        {variants.map(({ id, label, sub, Comp }) => (
+          <DCArtboard key={id} label={`${label} — ${sub}`} width={400} height={700} style={{ overflow:'hidden' }}>
+            <Comp ink={ink} />
+          </DCArtboard>
+        ))}
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
