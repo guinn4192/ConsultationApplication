@@ -1,0 +1,38 @@
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - heading "こころの相談室" [level=1] [ref=e3]
+    - paragraph [ref=e4]: あなたの悩みに寄り添うAIカウンセラー
+    - button "新しい相談を始める" [disabled] [ref=e5]
+    - generic [ref=e7]:
+      - button "🍂" [ref=e8] [cursor=pointer]
+      - button "🌊" [ref=e9] [cursor=pointer]
+      - button "🌿" [ref=e10] [cursor=pointer]
+      - button "🌙" [ref=e11] [cursor=pointer]
+      - button "🌸" [ref=e12] [cursor=pointer]
+  - main [ref=e13]:
+    - generic [ref=e15]:
+      - generic [ref=e16]: AIカウンセラー
+      - text: こんにちは！「こころの相談室」へようこそ。 私はあなたの悩みに寄り添うAIカウンセラーです。 仕事、人間関係、健康、日常生活など、どんなことでもお気軽にご相談ください。 【使い方のヒント】 ・下のカテゴリを選ぶと、より的確なアドバイスが受けられます ・テキスト欄にお悩みを入力して「送信する」を押してください ・続けて質問すると、会話の流れを踏まえて回答します ・新しい話題で相談したいときは「新しい相談を始める」を押してください
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - paragraph [ref=e19]: "相談モード:"
+        - generic [ref=e20]:
+          - button "バランス" [ref=e21] [cursor=pointer]
+          - button "共感モード" [ref=e22] [cursor=pointer]
+          - button "解決モード" [ref=e23] [cursor=pointer]
+        - paragraph [ref=e24]: 共感とアドバイスをバランスよく提供します
+      - generic [ref=e25]:
+        - paragraph [ref=e26]: "相談カテゴリ（任意）:"
+        - generic [ref=e27]:
+          - button "仕事" [ref=e28] [cursor=pointer]
+          - button "人間関係" [ref=e29] [cursor=pointer]
+          - button "健康" [ref=e30] [cursor=pointer]
+          - button "日常生活" [active] [ref=e31] [cursor=pointer]
+          - button "恋愛" [ref=e32] [cursor=pointer]
+          - button "お金" [ref=e33] [cursor=pointer]
+      - generic [ref=e34]:
+        - generic [ref=e35]:
+          - textbox "相談内容入力欄" [ref=e36]:
+            - /placeholder: お悩みをここに入力してください...
+          - generic [ref=e37]: 0 / 1000
+        - button "送信" [ref=e38] [cursor=pointer]: 送信する

@@ -54,7 +54,21 @@
       "Bash(awk '{print $NF}')",
       "Read(//c/Users/takut/.claude/**)",
       "Read(//c/Users/takut/**)",
-      "Bash(cmd //c \"taskkill /F /PID 13984\")"
+      "Bash(cmd //c \"taskkill /F /PID 13984\")",
+      "WebFetch(domain:api.anthropic.com)",
+      "Bash(mkdir -p /tmp/design_extract)",
+      "Bash(cp \"/c/Users/takut/.claude/projects/C--ConsultationApplication/6f6b0cc1-fd98-4329-9d64-fa7f9d7ee4dd/tool-results/webfetch-1776558168036-hd087u.bin\" ./design.tar.gz)",
+      "Bash(tar -tzf design.tar.gz)",
+      "Bash(tar -xzf design.tar.gz \"consultationapplication/README.md\" \"consultationapplication/project/Wireframe Sketchy.html\" \"consultationapplication/project/design-canvas.jsx\" \"consultationapplication/chats/chat1.md\")",
+      "Bash(cp *)",
+      "mcp__playwright__browser_resize",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_console_messages",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_close",
+      "Bash(kill %1)"
     ]
   }
 }

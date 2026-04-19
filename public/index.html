@@ -4,9 +4,29 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>こころの相談室</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Klee+One:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <svg class="sketch-filters" aria-hidden="true" focusable="false">
+    <defs>
+      <filter id="rough" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="4" seed="2" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+      <filter id="rough-heavy" x="-8%" y="-8%" width="116%" height="116%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.025" numOctaves="3" seed="5" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+      <filter id="rough-underline">
+        <feTurbulence type="fractalNoise" baseFrequency="0.08" numOctaves="2" seed="3"/>
+        <feDisplacementMap in="SourceGraphic" scale="2"/>
+      </filter>
+    </defs>
+  </svg>
+
   <header class="header">
     <h1 class="header-title">こころの相談室</h1>
     <p class="header-subtitle">あなたの悩みに寄り添うAIカウンセラー</p>
