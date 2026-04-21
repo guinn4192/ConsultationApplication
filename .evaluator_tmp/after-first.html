@@ -1,0 +1,108 @@
+<!DOCTYPE html><html lang="ja"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>こころの相談室</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&amp;family=Klee+One:wght@400;600&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <svg class="sketch-filters" aria-hidden="true" focusable="false">
+    <defs>
+      <filter id="rough" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="4" seed="2" result="noise"></feTurbulence>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap>
+      </filter>
+      <filter id="rough-heavy" x="-8%" y="-8%" width="116%" height="116%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.025" numOctaves="3" seed="5" result="noise"></feTurbulence>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap>
+      </filter>
+      <filter id="rough-underline">
+        <feTurbulence type="fractalNoise" baseFrequency="0.08" numOctaves="2" seed="3"></feTurbulence>
+        <feDisplacementMap in="SourceGraphic" scale="2"></feDisplacementMap>
+      </filter>
+    </defs>
+  </svg>
+
+  <header class="header">
+    <h1 class="header-title">こころの相談室</h1>
+    <p class="header-subtitle">あなたの悩みに寄り添うAIカウンセラー</p>
+    <button id="new-consultation-button" class="new-consultation-button" aria-label="新しい相談を始める">
+      新しい相談を始める
+    </button>
+    <div class="theme-section">
+      <div class="theme-buttons">
+        <button type="button" class="theme-button active" data-theme="default" title="ぬくもり">🍂</button>
+        <button type="button" class="theme-button" data-theme="ocean" title="やすらぎ">🌊</button>
+        <button type="button" class="theme-button" data-theme="forest" title="いやし">🌿</button>
+        <button type="button" class="theme-button" data-theme="night" title="よるのしじま">🌙</button>
+        <button type="button" class="theme-button" data-theme="sakura" title="はなごころ">🌸</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Feature 16: 本日の変化サマリカード（モーダル） -->
+  <div id="summary-modal" class="summary-modal" hidden="" aria-hidden="true"></div>
+
+  <main class="chat-container">
+    <div id="chat-messages" class="chat-messages">
+      <!-- Messages will appear here -->
+    <div class="message message-user" data-message-id="2fb9ef20-f89a-427b-b76c-ef91f5aeff05"><span class="message-label">あなた</span><span>最近、仕事がうまくいかなくて気持ちが落ち込んでいます。</span></div><div class="message message-ai message-streaming streaming-done" data-message-id="690b30a2-04a1-4ad2-aec9-e278f3ff9b09"><span class="message-label">AIカウンセラー</span><span class="message-streaming-content">お疲れ様です。仕事がうまくいかないと、本当に心が重くなってしまいますよね。そのお気持ち、よくわかります。
+
+毎日頑張っているからこそ、思うような結果が出ないときの落ち込みは深いものですし、そう感じてしまうのは当然のことです。あなたの気持ちを大切に受け止めています。
+
+少しでも心が軽くなるよう、こんなことを試してみてはいかがでしょうか：
+
+**今できることから始める**
+- 小さな目標を設定して、達成感を積み重ねる
+- 今日一日でできたことを振り返ってみる
+
+**気持ちのケア**
+- 信頼できる人と話したり、好きなことをする時間を作る
+- 十分な睡眠と栄養で、まずは体調を整える
+
+うまくいかない時期は誰にでもあります。今の状況が永続的なものではないということを、どうか忘れないでくださいね。
+
+一人で抱え込まず、また何か気になることがあれば、いつでもお話しください。あなたを応援しています。</span></div><div class="emotion-selector" data-for-message="690b30a2-04a1-4ad2-aec9-e278f3ff9b09" role="group" aria-label="今の気持ちを記録する"><span class="emotion-selector-label">今の気持ちは？</span><div class="emotion-buttons"><button type="button" class="emotion-button" data-value="1" aria-label="とてもつらい" aria-pressed="false" title="とてもつらい">😢</button><button type="button" class="emotion-button" data-value="2" aria-label="不安" aria-pressed="false" title="不安">😟</button><button type="button" class="emotion-button" data-value="3" aria-label="ふつう" aria-pressed="false" title="ふつう">😐</button><button type="button" class="emotion-button" data-value="4" aria-label="前向き" aria-pressed="false" title="前向き">🙂</button><button type="button" class="emotion-button" data-value="5" aria-label="とても前向き" aria-pressed="false" title="とても前向き">😊</button></div></div></div>
+
+    <div class="input-area">
+      <div class="mode-section">
+        <p class="mode-label">相談モード:</p>
+        <div class="mode-buttons">
+          <button type="button" class="mode-button active" data-mode="default">バランス</button>
+          <button type="button" class="mode-button" data-mode="empathy">共感モード</button>
+          <button type="button" class="mode-button" data-mode="solution">解決モード</button>
+        </div>
+        <p class="mode-description" id="mode-description">共感とアドバイスをバランスよく提供します</p>
+      </div>
+      <div class="category-section">
+        <p class="category-label">相談カテゴリ（任意）:</p>
+        <div id="category-buttons" class="category-buttons">
+          <button type="button" class="category-button" data-category="仕事">仕事</button>
+          <button type="button" class="category-button" data-category="人間関係">人間関係</button>
+          <button type="button" class="category-button" data-category="健康">健康</button>
+          <button type="button" class="category-button" data-category="日常生活">日常生活</button>
+          <button type="button" class="category-button" data-category="恋愛">恋愛</button>
+          <button type="button" class="category-button" data-category="お金">お金</button>
+        </div>
+      </div>
+      <form id="consult-form" class="input-form">
+        <div class="input-wrapper">
+          <textarea id="message-input" class="message-input" placeholder="お悩みをここに入力してください..." rows="3" aria-label="相談内容入力欄"></textarea>
+          <div class="char-count-wrapper">
+            <span id="char-count" class="char-count">0 / 1000</span>
+          </div>
+          <div id="error-message" class="error-message" hidden=""></div>
+        </div>
+        <button type="submit" id="send-button" class="send-button" aria-label="送信">
+          送信する
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <script type="module" src="js/main.js"></script>
+
+
+</body></html>

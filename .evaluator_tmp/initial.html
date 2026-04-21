@@ -1,28 +1,26 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
+<!DOCTYPE html><html lang="ja"><head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>こころの相談室</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Klee+One:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&amp;family=Klee+One:wght@400;600&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <svg class="sketch-filters" aria-hidden="true" focusable="false">
     <defs>
       <filter id="rough" x="-5%" y="-5%" width="110%" height="110%">
-        <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="4" seed="2" result="noise"/>
-        <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+        <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="4" seed="2" result="noise"></feTurbulence>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap>
       </filter>
       <filter id="rough-heavy" x="-8%" y="-8%" width="116%" height="116%">
-        <feTurbulence type="fractalNoise" baseFrequency="0.025" numOctaves="3" seed="5" result="noise"/>
-        <feDisplacementMap in="SourceGraphic" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G"/>
+        <feTurbulence type="fractalNoise" baseFrequency="0.025" numOctaves="3" seed="5" result="noise"></feTurbulence>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap>
       </filter>
       <filter id="rough-underline">
-        <feTurbulence type="fractalNoise" baseFrequency="0.08" numOctaves="2" seed="3"/>
-        <feDisplacementMap in="SourceGraphic" scale="2"/>
+        <feTurbulence type="fractalNoise" baseFrequency="0.08" numOctaves="2" seed="3"></feTurbulence>
+        <feDisplacementMap in="SourceGraphic" scale="2"></feDisplacementMap>
       </filter>
     </defs>
   </svg>
@@ -30,7 +28,7 @@
   <header class="header">
     <h1 class="header-title">こころの相談室</h1>
     <p class="header-subtitle">あなたの悩みに寄り添うAIカウンセラー</p>
-    <button id="new-consultation-button" class="new-consultation-button" disabled aria-label="新しい相談を始める">
+    <button id="new-consultation-button" class="new-consultation-button" disabled="" aria-label="新しい相談を始める">
       新しい相談を始める
     </button>
     <div class="theme-section">
@@ -45,12 +43,22 @@
   </header>
 
   <!-- Feature 16: 本日の変化サマリカード（モーダル） -->
-  <div id="summary-modal" class="summary-modal" hidden aria-hidden="true"></div>
+  <div id="summary-modal" class="summary-modal" hidden="" aria-hidden="true"></div>
 
   <main class="chat-container">
     <div id="chat-messages" class="chat-messages">
       <!-- Messages will appear here -->
-    </div>
+    <div id="welcome-message" class="message message-welcome"><span class="message-label">AIカウンセラー</span><span>こんにちは！「こころの相談室」へようこそ。
+
+私はあなたの悩みに寄り添うAIカウンセラーです。
+仕事、人間関係、健康、日常生活など、どんなことでもお気軽にご相談ください。
+
+【使い方のヒント】
+・下のカテゴリを選ぶと、より的確なアドバイスが受けられます
+・テキスト欄にお悩みを入力して「送信する」を押してください
+・続けて質問すると、会話の流れを踏まえて回答します
+・AI回答の下の絵文字で今の気持ちを記録できます
+・新しい話題で相談したいときは「新しい相談を始める」を押してください</span></div></div>
 
     <div class="input-area">
       <div class="mode-section">
@@ -75,17 +83,11 @@
       </div>
       <form id="consult-form" class="input-form">
         <div class="input-wrapper">
-          <textarea
-            id="message-input"
-            class="message-input"
-            placeholder="お悩みをここに入力してください..."
-            rows="3"
-            aria-label="相談内容入力欄"
-          ></textarea>
+          <textarea id="message-input" class="message-input" placeholder="お悩みをここに入力してください..." rows="3" aria-label="相談内容入力欄"></textarea>
           <div class="char-count-wrapper">
             <span id="char-count" class="char-count">0 / 1000</span>
           </div>
-          <div id="error-message" class="error-message" hidden></div>
+          <div id="error-message" class="error-message" hidden=""></div>
         </div>
         <button type="submit" id="send-button" class="send-button" aria-label="送信">
           送信する
@@ -95,5 +97,6 @@
   </main>
 
   <script type="module" src="js/main.js"></script>
-</body>
-</html>
+
+
+</body></html>

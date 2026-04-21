@@ -41,8 +41,19 @@ const SYSTEM_PROMPTS = {
 6. 日本語で回答してください。`,
 };
 
+// Sprint 6: Emotion → tone addendum.
+// 「モードの指示を踏まえた上で、補足:」で始めることで、
+// 既存モード（バランス/共感/解決）を上書きせず補足する形でトーンを微調整する（DESIGN.md §8.1 / R7）。
+const TONE_ADDENDUM = {
+  1: "\n\n補足: ユーザーが直近に記録した気分は「とてもつらい😢」です。モードの指示を踏まえた上で、特に強い共感と傾聴を重視し、「つらかったですね」「その気持ちを受け止めます」等の受容表現を中心に据えてください。解決策の提示は控えめにしてください。",
+  2: "\n\n補足: ユーザーが直近に記録した気分は「不安😟」です。モードの指示を踏まえた上で、断定や強い助言を避け、選択肢を並べて一緒に考える姿勢で寄り添ってください。",
+  3: null, // 中立は addendum なし
+  4: "\n\n補足: ユーザーが直近に記録した気分は「前向き🙂」です。モードの指示を踏まえた上で、「その調子です」「一緒に次の一歩を考えましょう」等の後押し表現を織り込んでください。",
+  5: "\n\n補足: ユーザーが直近に記録した気分は「とても前向き😊」です。モードの指示を踏まえた上で、建設的で行動指向の提案を前面に出し、次の具体的な一歩に繋がる言葉を選んでください。",
+};
+
 function buildConversationContext(req) {
-  const { message, messages, category, mode } = req.body;
+  const { message, messages, category, mode, lastEmotion } = req.body;
 
   const conversationMessages = messages && Array.isArray(messages) && messages.length > 0
     ? messages
@@ -53,6 +64,20 @@ function buildConversationContext(req) {
   let systemPrompt = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.default;
   if (category && typeof category === "string" && category.trim() !== "") {
     systemPrompt += `\n\n現在のユーザーの相談カテゴリは「${category}」です。このカテゴリに特に関連したアドバイスや視点を意識して回答してください。`;
+  }
+
+  // Sprint 6: lastEmotion (1-5) があれば末尾にトーン補足を append。
+  // 1-5 以外 / null / undefined の場合は何もしない（中立 3 も addendum なし）。
+  if (
+    typeof lastEmotion === "number" &&
+    Number.isInteger(lastEmotion) &&
+    lastEmotion >= 1 &&
+    lastEmotion <= 5
+  ) {
+    const addendum = TONE_ADDENDUM[lastEmotion];
+    if (addendum) {
+      systemPrompt += addendum;
+    }
   }
 
   return { conversationMessages, systemPrompt };

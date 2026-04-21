@@ -69,7 +69,9 @@
       "mcp__playwright__browser_click",
       "mcp__playwright__browser_close",
       "Bash(kill %1)",
-      "Bash(xargs grep *)"
+      "Bash(xargs grep *)",
+      "Bash(grep -v '.bak$')",
+      "Bash(npm list *)"
     ]
   }
 }

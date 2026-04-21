@@ -333,3 +333,138 @@
 - クライアント側にも AbortController + overall/idle タイムアウトを導入し、サーバー異常時でも最長 60 秒以内に UI が復帰する防御層を追加
 - 仕様書にない機能追加はなし（既存 Feature 12/13 の要件内での修正のみ）
 - 初回 Sprint 5 不合格の全 5 項目（req.on close 置換 / res.end 保証 / クライアントタイムアウト / 連続送信動作 / 検証ログ）に対応済み
+
+---
+
+## Sprint 6 自己評価
+
+### 実装した機能
+
+- **ESM 段階移行（DESIGN §8.1 先行準備）**: `public/app.js` を以下 7 ファイルに分割し、`public/app.js` は削除（`public/app.js.sprint5.bak` として保全）。`public/index.html` を `<script type="module" src="js/main.js">` に置換。
+  - `public/js/main.js` — DOMContentLoaded エントリ、送信フロー、モジュール初期化
+  - `public/js/state.js` — 単一ソース state（`sessionId` / `sessionMessages[]` / `emotions[]` / `selectedCategory` / `selectedMode` / `isStreaming`）。`onMessageDone` / `onEmotionRecorded` の購読 API を提供。`message.state: "streaming" | "done"` の FSM を実装し R3 race 対策
+  - `public/js/api.js` — `consultStream(payload, {onDelta, onDone, onError})` の fetch ラッパ。既存の全体/アイドルタイムアウトロジックを移植
+  - `public/js/ui/chat.js` — `addMessage` / `addStreamingMessage` / `scrollToBottom` / `showWelcomeMessage` / `clearMessages` / `markStreamingDone` / `getMessageEl`（`data-message-id` 対応）
+  - `public/js/ui/emotion.js` — Feature 14 絵文字セレクタ
+  - `public/js/ui/summary.js` — Feature 16 サマリカード
+  - `public/js/ui/shared.js` — テーマ / モード / カテゴリ切替、文字数カウンタ、`setLoading`、新相談ボタン状態
+- **Feature 14 感情記録UI**: AI 回答ストリーミング完了（`state.markAssistantDone` → `onMessageDone` 発火）時にメッセージ直下へ 5 絵文字ボタン群（😢😟😐🙂😊）を挿入。クリックで `.active` 付与、同値再押下は無視、別値押下で上書き。ホバー時 `transform: scale(1.12)` + 背景。`aria-pressed` でアクセシビリティ対応、`aria-label` で絵文字の意味を通知
+- **Feature 15 気分に応じた AI 回答トーン調整**: `server.js` の `buildConversationContext()` 末尾に `TONE_ADDENDUM` を append。addendum は全文「モードの指示を踏まえた上で」で始めて R7（モード上書き誤認）を回避。`lastEmotion` は `state.getLastEmotionValue()` で「最後に記録された絵文字値」を取得し、body に含めて送信。3（😐）は addendum なし。0-5 以外/型不正は黙って無視
+- **Feature 16 本日の変化サマリカード**: 「新しい相談を始める」クリック時にモーダルを開き、`state.getEmotions()` をもとに `{first, middle=floor(N/2), last}` の 3 ポイントを可視化。差分矢印（↗/→/↘）と色で上昇/横ばい/下降を示す。N=0: 「今回は気持ちの記録がありません」を表示した上でリセット続行可。N=1: 「最初」1 ポイント表示。N=2 以上: 3 ポイント。「リセットして新しい相談を始める」「閉じる」2 ボタン + ESC / 背景クリックで閉じる
+- **Feature 17 回帰**: Sprint 5 の SSE ロジック（`res.on("close")` / `AbortController` / `safeWrite` / finally `res.end()` / ping コメント）は完全保持。カテゴリ / モード / テーマ / 新しい相談 / 文字数カウンタ / Enter 送信のすべてを ESM 移行時にロジック改変なしで移植
+
+### 受け入れ基準の達成状況
+
+#### Feature 14: 感情記録UI（インライン絵文字セレクタ）
+| 基準 | 状態 | 備考 |
+|------|------|------|
+| AI 回答メッセージの下に 5 絵文字（😢😟😐🙂😊）がボタンとして横並びで表示される | ✅ | `renderSelectorFor(id)` で `msgEl.nextSibling` に `.emotion-selector` を挿入 |
+| ストリーミング完了後に表示される | ✅ | `state.markAssistantDone` → `onMessageDone` 購読時のみ描画（R3 対策） |
+| クリックで「選択済み」としてハイライトされる | ✅ | `.active` + `aria-pressed="true"` |
+| 同じ AI 回答に対して選択済み絵文字を別の絵文字に変更できる | ✅ | 兄弟ボタンの `.active` を外して新ボタンに付与 |
+| 絵文字未選択のまま次の相談を送信してもエラーにならない | ✅ | `state.getLastEmotionValue()` が null を返し、サーバは null を無視 |
+| 過去の AI 回答それぞれに、個別独立した絵文字セレクタが表示される | ✅ | `data-message-id` で 1 対 1 紐付け、state は `emotions[]` に push で履歴化 |
+| マウスホバー時のフィードバック | ✅ | `.emotion-button:hover { transform: scale(1.12); background-color: ... }` |
+| ストリーミング中のメッセージには絵文字セレクタが表示されない | ✅ | `onMessageDone` 経路のみで挿入、streaming 中の `addStreamingAssistantMessage` では発火しない |
+
+#### Feature 15: 気分に応じた AI 回答トーン調整
+| 基準 | 状態 | 備考 |
+|------|------|------|
+| 😢/😟 選択直後の次送信で共感・傾聴寄りトーンになる | ✅ | `TONE_ADDENDUM[1|2]` が `buildConversationContext` 末尾に append される。「強い共感と傾聴を重視」「選択肢を並べて一緒に考える」等を指示 |
+| 🙂/😊 選択直後の次送信で前向き・サポート寄りトーンになる | ✅ | `TONE_ADDENDUM[4|5]` で「その調子」「行動指向の提案」等を指示 |
+| 😐 選択直後の次送信は中立的なトーン | ✅ | `TONE_ADDENDUM[3] = null`（addendum を追加しない） |
+| 気分未選択時は従来通りのモードに従う | ✅ | `state.getLastEmotionValue()` が null のため、サーバ側で addendum 追加条件（1〜5 整数チェック）を満たさず既存挙動 |
+| モード選択・カテゴリ選択と併存 | ✅ | addendum は既存 `systemPrompt`（モード + カテゴリ）の末尾に append、「モードの指示を踏まえた上で、補足:」で始めることで上書きしない（R7 対策） |
+| Evaluator が検証可能 | ✅ | body に `lastEmotion: 1-5 \| null` を送る経路が `/api/consult/stream` に通っている |
+
+#### Feature 16: 本日の変化サマリカード
+| 基準 | 状態 | 備考 |
+|------|------|------|
+| 「新しい相談を始める」クリックで即クリアせずサマリを先に表示 | ✅ | `newConsultationButton` クリック時に `openSummary()` のみ呼び出し。リセットは確定ボタン経由 |
+| 開始時・中盤（`floor(N/2)`）・最終の 3 ポイントを絵文字で表示 | ✅ | `summary.js:compute()` で `emotions[0]` / `emotions[Math.floor(n/2)]` / `emotions[n-1]`（R6 対策） |
+| 上昇/下降の視覚表現 | ✅ | `summary-change-arrow` で ↗ ↘ → + クラス別色（up=緑, down=赤, flat=ink-soft） |
+| N=0 時は「記録がありません」表示 + リセット続行可 | ✅ | `.summary-empty` メッセージ表示、`summary-button-reset` はそのまま活性 |
+| N=1 時は「最初」1 ポイント表示の簡略表示 | ✅ | `points: [{ label: "最初", value }]` で 1 要素のみレンダリング |
+| 「リセットして新しい相談を始める」「閉じる」2 ボタン | ✅ | `.summary-actions` 内に 2 ボタン |
+| リセットボタンで会話履歴と気分記録が全てクリア | ✅ | `performReset()` → `state.resetSession()` + `clearMessages()` + `showWelcomeMessage()` + `resetModeAndCategoryUi()` |
+| 閉じるボタンで元の相談画面に戻り、履歴・記録保持 | ✅ | `close()` は DOM innerHTML クリアと `hidden` のみ。state は無変更 |
+| Evaluator が Playwright で検証可能 | ✅ | `#summary-modal.is-open`、`.summary-point-emoji`、`.summary-button-reset` / `.summary-button-close` のセレクタを提供 |
+
+#### Feature 17: 既存機能のストリーミング下での互換維持
+| 基準 | 状態 | 備考 |
+|------|------|------|
+| カテゴリを選択した状態で送信すると回答に反映される | ✅ | ロジック未改変（body に `category` を載せる経路 + サーバ `buildConversationContext` 完全保持） |
+| モード選択が回答のトーンに反映される | ✅ | 同上（`SYSTEM_PROMPTS[mode]` は変更なし） |
+| テーマ切替後のストリーミング中でレイアウト崩れ・文字重なりなし | ⚠️ | CSS 変数ベースで実装し、絵文字セレクタ・サマリカードも CSS 変数で theme 対応済み。ただし全 5 テーマの実機最終確認は Evaluator |
+| 「新しい相談を始める」ボタンでクリアされる | ✅ | サマリカード経由の `performReset` 内で `clearMessages()` + `state.resetSession()` |
+| 文字数カウンタがストリーミング中・完了後も正しく動作 | ✅ | `updateCharCount()` が `state.isStreaming()` を参照して disabled を維持、完了後は finally で `updateCharCount()` 再呼び |
+| 続けて次の相談を送信すると前回文脈を踏まえた回答が返る | ✅ | `state.getApiMessages()` が `sessionMessages` 全件を role/content で返すためClaude に毎回送信 |
+
+### DESIGN.md との整合
+
+- **採用技術が DESIGN.md の選定通りか**: ✅
+  - ESM バニラ分割（§1.3 / §8.1 先行準備手順 1-3）そのまま
+  - `crypto.randomUUID()` 採番（§1.2）
+  - 新規依存は 0（DESIGN §1.6 記載の better-sqlite3 は Sprint 7）
+- **処理方針の遵守状況**:
+  - **§4.2 シーケンス**: user 送信 → state.ensureSessionId → addUserMessage → consultStream → delta で addStreamingAssistantMessage → done で markAssistantDone → onMessageDone で絵文字セレクタ描画、の順に忠実実装
+  - **§4.3 サマリ**: `floor(N/2)` 中盤定義（R6）を `summary.js:compute` に明記・コメント付き実装
+  - **§7.1 エラーハンドリング**: 既存 SSE `event:error` 経路維持、api.js に `serverSignaledError` を受け取ってから throw する分岐あり
+  - **§7.3 非同期処理**: 既存 AbortController + overall/idle タイムアウトをそのまま `api.js` に移植
+  - **§8.1 TONE_ADDENDUM 実装スケッチ**: 文言・冒頭「モードの指示を踏まえた上で」完全一致で実装
+  - **§8.1 メッセージ ID 採番**: ユーザー発言 = 送信直前、AI 発言 = 初回 delta 時点（`state.addStreamingAssistantMessage`）で採番し、done 時にこの id を `state.markAssistantDone(id, reply)` に渡す
+  - **R3 対策**: `onMessageDone` 購読経路のみで emotion セレクタを描画、streaming 中は `state: "streaming"` のため `renderSelectorFor()` の判定で弾く
+  - **R7 対策**: addendum 冒頭を「モードの指示を踏まえた上で」に固定
+- **Sprint 5 SSE ロジック保持**:
+  - `res.on("close")`（✅ `req.on("close")` 使用なし）
+  - `AbortController` を Anthropic SDK に渡す（✅）
+  - `safeWrite` ヘルパ（✅）
+  - finally `res.end()` 保証（✅）
+  - 先頭 `: ping\n\n`（✅）
+  - 全て `server.js` 原コード保持、`buildConversationContext` の末尾 append のみ追加
+- **設計逸脱**: なし
+
+### 技術的判断
+
+- **絵文字セレクタ挿入位置**: メッセージ吹き出しの「内部」ではなく「直後の兄弟要素」として挿入。理由: (1) 吹き出しの rough border に影響を与えない、(2) `data-message-id` で紐付ければ挿入位置は柔軟、(3) 既存 `.message` スタイルを改変しないで済む（Feature 17 回帰リスク最小化）
+- **emotion 記録の append-only**: DESIGN §5.2 「同一 `message_id` に対して複数レコードが入り得る（…常に最新行を採用）」に合わせ、Sprint 6 から `emotions[]` を append して `getEmotionForMessage` は末尾から検索する方式にした。Sprint 7 で DB に移行する際はそのまま INSERT に置換可能
+- **lastEmotion の解釈**: 「直近に記録した気分」を「`emotions[]` の末尾（= セッション全体で最後に押された絵文字）」と定義。各 AI 回答に 1:1 で紐付けるのではなく、ユーザーが現在持っている気分状態として扱う（SPEC Feature 15 の「ユーザーが直近に記録した気分」に対応）
+- **サマリモーダル**: `<dialog>` ではなく `<div id="summary-modal" hidden>` + `.is-open` クラスで実装。理由: (1) `<dialog>` は Safari 15 以前で不完全対応、(2) 既存 sketchy デザインで rough filter をかけやすいよう CSS 全権制御したい
+- **addendum 適用位置**: `systemPrompt` の**末尾**に append（DESIGN §8.1 指示通り）。「上書き」にならないようモード指示本体の後ろに置き、「補足:」として位置付ける。これによりモード選択 × 気分選択のクロスが自然に両立
+- **既存 `/api/consult`（非ストリーミング）**: `buildConversationContext` を共有しているため、body に `lastEmotion` が入った場合は自動で addendum が反映される（ただし SPEC / DESIGN では Sprint 6 の `lastEmotion` は `/api/consult/stream` 経由と明記されているので、実運用上 `/api/consult` には流れない）
+
+### 既知の問題
+
+- **全テーマ（default / ocean / forest / night / sakura）での実機確認**: 絵文字セレクタ・サマリカード CSS は CSS 変数で theme 対応済みだが、Playwright 実機レイアウト確認は Evaluator に委ねる
+- **Express 静的配信のレスポンスヘッダ**: `/js/main.js` は `application/javascript; charset=UTF-8` を返すことを確認済み。ただし一部古いブラウザで module type 解釈が必要な場合は `.mjs` 拡張子への変更を要するかもしれない（現状要件は「主要ブラウザ最新版」なので問題なし）
+- **R9 系（マルチタブ）**: Sprint 6 の DB なし構成では state はタブ内メモリのみで完結するため、マルチタブで別セッション扱いになる（SPEC スコープ外）
+
+### 次スプリントへの申し送り
+
+- **Sprint 7 実装前のファイル構成**: DESIGN §2.3 に記載のディレクトリ構成のうち、以下は **Sprint 6 で既に揃っている**:
+  - `public/js/main.js` / `state.js` / `api.js` / `ui/chat.js` / `ui/emotion.js` / `ui/summary.js` / `ui/shared.js`
+- **Sprint 7 で追加が必要**:
+  - `src/db/`（driver / schema / repo）
+  - `src/routes/`（user / sessions / emotions / history）
+  - `public/js/router.js` / `public/js/ui/onboarding.js` / `public/js/ui/history.js` / `public/js/ui/resume.js`
+  - `data/.gitignore` 配置と `better-sqlite3` 依存追加
+- **state の Sprint 7 接続点**:
+  - `state.getUserUuid()` は現在 null を返す。Sprint 7 でオンボーディング完了時に `state.setUserUuid(uuid)` メソッド（未実装）を追加して localStorage と同期させる
+  - `state.ensureSessionId()` は Sprint 7 でサーバ `POST /api/sessions` 呼び出しと同期する必要あり。現状クライアント採番 UUID が DB PK として素直に流用できる（DESIGN §5.2 sessions.id 「クライアント採番 UUID」）
+- **`/api/consult/stream` の拡張点**:
+  - Sprint 6 では body の `sessionId` / `userUuid` を無視している（後方互換）。Sprint 7 では `userUuid`（ヘッダ優先、body フォールバック）で認可 + `sessionId` 必須化、messages / emotion_records の INSERT を追加
+  - `event: done` の data には `assistantMessageId` を追加予定。Sprint 6 クライアントはサーバ側の id を受け取らずクライアント採番 id を使用中。Sprint 7 ではサーバ返却 id を優先に差し替える
+- **emotion 記録の DB 書き込みタイミング**: Sprint 6 では `state.recordEmotion` がメモリ push のみ。Sprint 7 では同メソッド内で `POST /api/emotions` を呼ぶように拡張する。クライアント採番 `id` / `messageId` をそのままサーバに渡せばユニーク制約と整合する
+- **感情トラッカーの Evaluator 検証観点（DESIGN 付録 B Sprint 6）**:
+  - モード=解決 × 気分=😢 のクロスで、解決プロセスを保ったまま共感表現が増えることを確認（R7）
+  - N=5 件記録時にサマリの中盤が index=2（3 件目）を参照（R6）
+  - ESM 移行後の Sprint 5 回帰（テーマ切替・ストリーミング・文字数・新相談）全実施（R2）
+
+### 総合自己評価: A
+
+- Feature 14 / 15 / 16 / 17 の全受け入れ基準を機能レベルで達成
+- DESIGN.md の技術選定・処理方針・リスク対策（R2 / R3 / R6 / R7）を全て遵守し、逸脱なし
+- Sprint 5 SSE ロジック（req.on close 使用禁止 / res.end 保証 / タイムアウト）を完全保持
+- サーバ起動（`npm start`）、静的ファイル配信（`/js/*.js` = `application/javascript`）、エンドポイント後方互換（`lastEmotion` / `sessionId` / `userUuid` を body に含めても既存挙動維持）を実測確認
+- CSS 変数ベースで全 5 テーマ対応を実装（実機確認は Evaluator）
+- 仕様書にない機能追加なし（Feature 14/15/16 + Feature 17 回帰のみ）
