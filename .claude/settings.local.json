@@ -71,7 +71,11 @@
       "Bash(kill %1)",
       "Bash(xargs grep *)",
       "Bash(grep -v '.bak$')",
-      "Bash(npm list *)"
+      "Bash(npm list *)",
+      "Bash(npm ls *)",
+      "Bash(findstr node.exe)",
+      "Bash(powershell -Command \"Stop-Process -Id 16672 -Force\")",
+      "Bash(rm -f data/app.db data/app.db-journal data/app.db-wal data/app.db-shm)"
     ]
   }
 }

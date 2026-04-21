@@ -1,0 +1,7 @@
+# DESIGN.md §2.3 / R5: SQLite 成果物を git 管理から除外
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite-journal

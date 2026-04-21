@@ -1,13 +1,53 @@
 require("dotenv").config({ quiet: true });
 const express = require("express");
 const path = require("path");
+const { randomUUID } = require("crypto");
 const Anthropic = require("@anthropic-ai/sdk");
+
+// Sprint 7: DB 初期化 + ルート切り出し
+const { openDb } = require("./src/db/driver");
+const { initSchema } = require("./src/db/schema");
+const { createRepo } = require("./src/db/repo");
+const { createUserRouter } = require("./src/routes/user");
+const { createSessionsRouter } = require("./src/routes/sessions");
+const { createEmotionsRouter } = require("./src/routes/emotions");
+const { createHistoryRouter } = require("./src/routes/history");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
+
+// ============================================================================
+// Sprint 7: DB 初期化
+// ============================================================================
+const DB_PATH = path.join(__dirname, "data", "app.db");
+let db = null;
+let repo = null;
+
+try {
+  db = openDb(DB_PATH);
+  const { orphanClosed } = initSchema(db);
+  console.log(`DB initialized: data/app.db (driver: ${db.impl}, WAL)`);
+  if (orphanClosed > 0) {
+    console.log(`Closed ${orphanClosed} orphan sessions`);
+  }
+  repo = createRepo(db);
+} catch (err) {
+  console.error("DB initialization failed:", err.message);
+  process.exit(1);
+}
+
+// ルート登録
+app.use("/api/user", createUserRouter(repo));
+app.use("/api/sessions", createSessionsRouter(repo));
+app.use("/api/emotions", createEmotionsRouter(repo));
+app.use("/api/history", createHistoryRouter(repo));
+
+// ============================================================================
+// Consult endpoints (Sprint 5/6 踏襲 + Sprint 7 DB 書き込み)
+// ============================================================================
 
 const SYSTEM_PROMPTS = {
   empathy: `あなたは「こころの相談室」という相談アプリのAIカウンセラーです。
@@ -83,6 +123,16 @@ function buildConversationContext(req) {
   return { conversationMessages, systemPrompt };
 }
 
+/**
+ * x-user-uuid ヘッダまたは body.userUuid から userUuid を解決（§6.1 注記）。
+ */
+function resolveUserUuidForConsult(req) {
+  const fromHeader = req.get("x-user-uuid");
+  if (fromHeader && typeof fromHeader === "string") return fromHeader.trim();
+  if (req.body && typeof req.body.userUuid === "string") return req.body.userUuid.trim();
+  return null;
+}
+
 app.post("/api/consult", async (req, res) => {
   const { conversationMessages, systemPrompt } = buildConversationContext(req);
 
@@ -140,6 +190,59 @@ app.post("/api/consult/stream", async (req, res) => {
         "APIキーが設定されていません。環境変数 ANTHROPIC_API_KEY を設定してください。",
     });
     return;
+  }
+
+  // Sprint 7: userUuid / sessionId / userMessageId 受領（ヘッダ優先 / body フォールバック）
+  const userUuid = resolveUserUuidForConsult(req);
+  const body = req.body || {};
+  const sessionId = typeof body.sessionId === "string" ? body.sessionId.trim() : null;
+  const userMessageId =
+    typeof body.userMessageId === "string" ? body.userMessageId.trim() : null;
+  const mode = typeof body.mode === "string" ? body.mode : null;
+  const category = typeof body.category === "string" ? body.category : null;
+
+  // DB 書き込み用の判定: userUuid + sessionId + 最終 user メッセージがあれば ON
+  const canPersist = !!(userUuid && sessionId && repo);
+  let persistedUser = false;
+  // 既存ユーザーの確認（§7.6 / §7.4 ユーザー分離）。見つからない場合は永続化スキップ
+  if (canPersist) {
+    try {
+      const user = repo.getUser(userUuid);
+      if (!user) {
+        // 認可されないユーザーからのストリーム要求は SSE は走らせつつ DB 書き込みのみスキップ
+      } else {
+        // セッションの存在保証（冪等）
+        repo.createSession(sessionId, userUuid);
+        const session = repo.getSession(sessionId);
+        if (session && session.userUuid === userUuid) {
+          // 最後の user メッセージを 1 件だけ INSERT（再送時は id 重複になるので try/catch）
+          const lastUserMsg =
+            conversationMessages.length > 0 &&
+            conversationMessages[conversationMessages.length - 1].role === "user"
+              ? conversationMessages[conversationMessages.length - 1]
+              : null;
+          if (lastUserMsg) {
+            const id = userMessageId || randomUUID();
+            try {
+              repo.insertMessage({
+                id,
+                sessionId,
+                role: "user",
+                content: lastUserMsg.content,
+                mode,
+                category,
+              });
+              persistedUser = true;
+            } catch (e) {
+              // PRIMARY KEY 競合等は無視（クライアント再送時）
+              persistedUser = false;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error("DB pre-write failed in /api/consult/stream:", e.message);
+    }
   }
 
   // Set SSE headers
@@ -218,7 +321,38 @@ app.post("/api/consult/stream", async (req, res) => {
         .filter((block) => block.type === "text")
         .map((block) => block.text)
         .join("\n");
-      sendEvent("done", { reply });
+
+      // Sprint 7: done イベント送出前に assistant メッセージを INSERT
+      let assistantMessageId = randomUUID();
+      let persisted = false;
+      if (canPersist) {
+        try {
+          const user = repo.getUser(userUuid);
+          if (user) {
+            const session = repo.getSession(sessionId);
+            if (session && session.userUuid === userUuid) {
+              repo.insertMessage({
+                id: assistantMessageId,
+                sessionId,
+                role: "assistant",
+                content: reply,
+                mode: null,
+                category: null,
+              });
+              persisted = true;
+            }
+          }
+        } catch (e) {
+          console.error("DB insertMessage(assistant) failed:", e.message);
+          persisted = false;
+        }
+      }
+
+      sendEvent("done", {
+        reply,
+        assistantMessageId,
+        persisted: persisted && persistedUser,
+      });
       finished = true;
     }
   } catch (err) {

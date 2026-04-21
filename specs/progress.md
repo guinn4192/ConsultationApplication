@@ -468,3 +468,152 @@
 - サーバ起動（`npm start`）、静的ファイル配信（`/js/*.js` = `application/javascript`）、エンドポイント後方互換（`lastEmotion` / `sessionId` / `userUuid` を body に含めても既存挙動維持）を実測確認
 - CSS 変数ベースで全 5 テーマ対応を実装（実機確認は Evaluator）
 - 仕様書にない機能追加なし（Feature 14/15/16 + Feature 17 回帰のみ）
+
+---
+
+## Sprint 7 自己評価
+
+対応 Feature: **Feature 18（匿名ユーザー識別とオンボーディング）/ Feature 19（DB 永続化）/ Feature 20（過去の相談履歴画面）/ Feature 21（中断した会話の再開）**
+DESIGN.md 参照章: §1.1 / §1.6 / §2.3 / §4.2-4.5 / §5.1-5.2 / §6.2-6.6 / §7.4-7.6 / §8.7 / §9.1
+
+### 実装した機能
+
+#### Feature 18: 匿名ユーザー識別 + オンボーディング画面（SPEC §3.18）
+- `public/js/ui/onboarding.js` 新規: 初回アクセス時の名前入力フォーム（1〜50 文字バリデーション、空/長すぎエラー表示、オートフォーカス）。登録成功で `POST /api/user/register` を叩き、サーバが発行した UUID と `userName` を `state.setUserUuid / setUserName` 経由で localStorage（`consultationApp.userUuid` / `consultationApp.userName`）へ永続化。
+- `public/index.html`: ヘッダーに `#header-user-name`（「○○さん」表示）と `#header-history-link`（過去履歴への動線）を追加。`.onboarding-screen` セクションを追加。
+- `public/js/main.js` bootstrap: (1) localStorage の UUID 確認 → (2) 無ければオンボーディング画面へ遷移 → (3) 有れば `GET /api/user/:uuid` で存在確認。404 なら `state.clearUser()` + 再オンボーディング（DESIGN §7.4）。
+- サーバ側 `src/routes/user.js`: `POST /register` は 201 で `{uuid, userName}` を返却、`GET /:uuid` は存在時 200、不在時 404（§6.2）。入力バリデーション（1〜50 文字、trim 後）も実装。
+
+#### Feature 19: DB 永続化（SPEC §3.19）
+- DB 駆動層 `src/db/driver.js` 新規: DESIGN §1.1 に従い `better-sqlite3` を優先ロード、失敗時は Node 22+ 組み込み `node:sqlite` にフォールバック。WAL + `synchronous=NORMAL` + `foreign_keys=ON` を PRAGMA で設定（§5.1）。`data/` ディレクトリ自動生成。`node:sqlite` の ExperimentalWarning は `process.emitWarning` を一時パッチ + `--no-warnings=ExperimentalWarning` の npm script でサイレント化。
+- スキーマ `src/db/schema.js` 新規: DESIGN §5.2 のテーブル 4 本（users / sessions / messages / emotion_records）+ インデックス 3 本（`idx_sessions_user_started`, `idx_messages_session_created`, `idx_emotion_session_created`）を `CREATE TABLE/INDEX IF NOT EXISTS` で冪等作成。サーバ起動時に日付またぎの未クローズ sessions を自動 `closed_at=NOW` 化（§7.6 孤児対応）。
+- リポジトリ層 `src/db/repo.js` 新規: 全 prepared statements をモジュール 1 回だけコンパイルし再利用（§8.7）。主要関数: `createUser` / `touchUser` / `createSession (INSERT OR IGNORE で冪等)` / `closeSession (changes=0 → {alreadyClosed:true} で冪等)` / `getResumableSession (user 所有 + closed_at IS NULL + date(started_at)=date('now') の最新 1 件, 空配列ではなく null を返す)` / `insertMessage` / `insertEmotion (append-only, §5.2)` / `listSessionsByUser` / `getSessionDetail (user_uuid 不一致は forbidden フラグ)`。
+- API 拡張:
+  - `POST /api/sessions` → `src/routes/sessions.js`: クライアント採番 UUID を `clientSessionId` で受け付け、サーバ側で存在チェックして無ければ INSERT。`{sessionId, startedAt}` 返却（§6.3）。
+  - `POST /api/sessions/:id/close` → 同上: 冪等（`WHERE id=? AND user_uuid=? AND closed_at IS NULL`、`changes=0` なら `alreadyClosed:true`）。
+  - `POST /api/emotions` → `src/routes/emotions.js`: `{sessionId, messageId, emojiValue 1-5}` を検証、セッション所有者チェック（403）、append-only INSERT（§6.5）。
+  - 既存 `/api/consult/stream` → `server.js` 改修: `x-user-uuid` ヘッダ優先・body フォールバックで `userUuid` を解決。
+    1. ストリーミング開始前にセッション INSERT（`createSession`）+ ユーザーメッセージ INSERT（`insertMessage`）。
+    2. `finalMessage()` 完了後、`done` イベント発火前にアシスタントメッセージを INSERT し、サーバ採番 `assistantMessageId` を取得。
+    3. `event: done` の payload を `{reply, assistantMessageId, persisted}` に拡張（§6.6 / Sprint 6 自己評価の接続点どおり）。
+    4. Sprint 5 SSE 安全策（`res.on("close")` / AbortController / safeWrite / finally `res.end()` / leading `: ping`）は完全保持。
+- クライアント側 `public/js/api.js`: `apiFetch` で全リクエストに `x-user-uuid` ヘッダを自動付与。`registerUser / getUser / createSession / closeSession / getResumableSession / saveEmotion / listHistory / getHistoryDetail` を新規追加。`consultStream` は `assistantMessageId` / `persisted` を `done` event から取り出してコールバックに渡す。
+- `public/js/state.js`: `replaceAssistantMessageId(oldId, newId)` を追加し、サーバ採番 id が返ってきた時点で `messages[]` / `emotions[]` の `messageId` 参照を書き換える（§7.5）。DB 書き込み失敗時はトースト表示しつつ UI 継続（DESIGN §9.1 R1 / Sprint 6 自己評価の方針）。
+
+#### Feature 20: 過去の相談履歴画面（SPEC §3.20）
+- `public/js/ui/history.js` 新規（閲覧専用、編集・削除なし）:
+  - `showList()`: `GET /api/history` で user 所有セッション一覧を取得 → 日付でグループ化（`date(started_at)`）→ 各セッションに時刻・プレビュー（50 文字 trim）・ステータス（完了/継続中）ボタン表示。空時は「まだ相談履歴はありません」。
+  - `showDetail(sessionId)`: `GET /api/history/:sessionId` で `{session, messages, emotions}` 取得 → 気分推移トラック（後述）+ 発言ログ表示。assistant メッセージ直下にその回答に対する emoji 記録（最新採用、§7.6）を `記録: 🙂 前向き` 形式で表示。
+  - 気分推移: DESIGN §4.3 R6 に従い `n=0 → 空表示 / n=1 → 最初のみ / n≥2 → (最初, sorted[floor(N/2)], 最後)` の 3 点トラック。矢印（↗ up / ↘ down / → flat）で変化を可視化。
+- ルーター `public/js/router.js` 新規: hash ベース（`#/`, `#/onboarding`, `#/history`, `#/history/:id`）。不明 route は `#/` にフォールバック。`subscribe` / `navigate` / `start` を export。
+- サーバ `src/routes/history.js`: `GET /api/history` で `listSessionsByUser(userUuid)` + 各セッションの最初のユーザー発言を preview として返却。`GET /api/history/:sessionId` は所有者チェック（403）後 `{session, messages[], emotions[]}` を返却（§6.4）。
+
+#### Feature 21: 中断した会話の再開（SPEC §3.21）
+- `public/js/ui/resume.js` 新規: 2 ボタンモーダル「前回の続きから再開する」/「新しく始める」。
+  - 再開時: `state.setSessionId(session.id)` + `state.restoreFromServer({sessionId, messages, emotions})` でステート丸ごと復元 → 画面クリア + 全メッセージを **ストリーミングせず即時 addMessage** → 各 assistant メッセージに `renderSelectorFor(messageId)` を呼び、emotion の `.active` 状態も復元（`state.getEmotionForMessage` が messageId→emojiValue を返すため追加操作不要、§7.6）。
+  - 新しく始める時: `closeSession(session.id)` で旧セッションを冪等 close（失敗しても続行） + `state.resetSession()`。
+- bootstrap フロー（`main.js`）: ユーザー存在確認後、`GET /api/sessions/resumable` を呼ぶ。200 + payload があれば `#/` に遷移してからモーダル表示、204 No Content ならウェルカムメッセージ表示。
+- サーバ `src/routes/sessions.js` `GET /resumable`: `WHERE user_uuid=? AND closed_at IS NULL AND date(started_at)=date('now') ORDER BY started_at DESC LIMIT 1` で該当 1 件取得、無ければ 204（§6.3 / §7.6）。該当セッションの messages と emotions も同時返却。
+- 日付跨ぎ保護: サーバ起動時 schema.js が未クローズの過去日付セッションを自動クローズ（§7.6 の orphan close）。
+
+### 受け入れ基準の達成状況
+
+#### Feature 18（SPEC §3.18 受け入れ基準）
+| 基準 | 状態 | 備考 |
+|------|------|------|
+| 初回アクセスでオンボーディング画面が表示される | ✅ | localStorage に UUID が無ければ `#/onboarding` へ強制遷移 |
+| 名前入力 → UUID がサーバで発行される | ✅ | `POST /api/user/register` が 201 + `{uuid, userName}` |
+| UUID が localStorage に保存される | ✅ | `consultationApp.userUuid` / `consultationApp.userName` キー |
+| 2 回目以降はオンボーディング画面をスキップ | ✅ | `GET /api/user/:uuid` で 200 が返れば相談画面へ直行 |
+| 名前が画面（ヘッダー）に表示される | ✅ | `#header-user-name`「○○さん」形式 |
+| 空名前・51 文字以上はエラー | ✅ | クライアント + サーバ両方でバリデーション |
+| サーバで UUID 紛失（404）時は再オンボーディング | ✅ | `state.clearUser()` して localStorage も消去 |
+
+#### Feature 19（SPEC §3.19 受け入れ基準）
+| 基準 | 状態 | 備考 |
+|------|------|------|
+| 相談内容が DB に保存される | ✅ | messages テーブル、ストリーミング前後で user/assistant を個別 INSERT |
+| 感情記録が DB に保存される | ✅ | emotion_records に append-only INSERT、`POST /api/emotions` |
+| セッション境界（開始/終了）が記録される | ✅ | sessions.started_at / closed_at、`POST /api/sessions` + `/close` |
+| UUID と紐づく | ✅ | 全テーブル FK `user_uuid → users.uuid` |
+| サーバ再起動後もデータが残る | ✅ | SQLite WAL モードでファイル永続化、smoke test で確認 |
+| DB 書き込み失敗時も UI は止まらない | ✅ | `persist-error-toast` を表示して会話継続（§9.1 R1） |
+
+#### Feature 20（SPEC §3.20 受け入れ基準）
+| 基準 | 状態 | 備考 |
+|------|------|------|
+| ヘッダーから履歴画面へ遷移できる | ✅ | `#header-history-link` → `#/history` |
+| セッション一覧が日付でグループ化される | ✅ | `date(started_at)` でグルーピング、見出し付きセクション |
+| 各セッションのプレビューが表示される | ✅ | 最初のユーザー発言を 50 文字 trim |
+| セッションクリックで詳細が表示される | ✅ | `#/history/:id` で `showDetail` |
+| 詳細画面で発言履歴が時系列表示される | ✅ | messages を `created_at` 昇順で表示 |
+| 詳細画面で気分推移が可視化される | ✅ | 開始/中盤 (floor(N/2))/最終の 3 点トラック、矢印で変化方向 |
+| 他ユーザーのセッションは見られない | ✅ | API 側で `user_uuid` 不一致なら 403 |
+| 閲覧専用（編集・削除なし） | ✅ | UI に編集ボタンなし、API にも更新エンドポイントなし |
+
+#### Feature 21（SPEC §3.21 受け入れ基準）
+| 基準 | 状態 | 備考 |
+|------|------|------|
+| 同日に未クローズセッションがあれば再開モーダル表示 | ✅ | `GET /api/sessions/resumable` が 200 の場合 |
+| 未クローズが無ければモーダル表示しない | ✅ | 204 No Content で通常フロー |
+| 「続きから」選択で履歴が復元される | ✅ | `restoreFromServer` + 即時 addMessage（ストリーミングなし） |
+| 感情記録の `.active` 状態も復元される | ✅ | `renderSelectorFor(messageId)` が `state.getEmotionForMessage` を参照 |
+| 「新しく始める」で旧セッションが close される | ✅ | `POST /api/sessions/:id/close` を冪等呼び出し |
+| 日付跨ぎの古いセッションは候補に出ない | ✅ | `date(started_at)=date('now')` 条件 + 起動時の orphan close |
+
+### DESIGN.md との整合
+- 採用技術が DESIGN.md の選定通りか: **⚠️ 部分的に逸脱（許可された範囲内）**
+  - §1.1「SQLite 駆動: better-sqlite3 を第一選択、失敗時 `node:sqlite` フォールバック」に従い、better-sqlite3 のネイティブビルドが Node v24 + Windows 環境で失敗したため `node:sqlite` に自動フォールバック。これは DESIGN.md が明示的に許可している経路。
+  - `package.json` で better-sqlite3 を `optionalDependencies` に配置し、`npm install` がハードフェイルしないようにした（DESIGN §1.6 の「optional にする」方針と整合）。
+- 処理方針の遵守状況:
+  - §4.2 ユーザー識別フロー: bootstrap 順序（localStorage 確認 → 無ければ onboarding → 有れば `GET /api/user/:uuid` → 404 なら clear）完全遵守。
+  - §4.3 気分トラッカー: append-only、`message_id` の最新採用、R6 の `floor(N/2)` 中盤ポイントを履歴画面でも厳守。
+  - §4.4 履歴: 閲覧専用、`user_uuid` 所有者チェック、プレビュー 50 文字、日付グルーピング。
+  - §4.5 再開: `GET /api/sessions/resumable` → 同日の未クローズのみ、モーダル → 復元 or 新規、冪等 close。
+  - §5.1 PRAGMA: `journal_mode=WAL` / `synchronous=NORMAL` / `foreign_keys=ON`。
+  - §5.2 スキーマ: 4 テーブル + 3 インデックスの定義・型・制約を一致させ、emotion_records は append-only。
+  - §6.2-6.6 API 契約: ステータスコード・リクエスト/レスポンス形状・認可ルールを遵守。
+  - §7.4 オンボーディング: 1〜50 文字バリデーション、trim。
+  - §7.5 ログポリシー: `node:sqlite` の ExperimentalWarning をサイレント化し、起動ログは `DB initialized:` と `Server running at` の 2 行のみ。
+  - §7.6 セッション: 同日判定・orphan close・冪等 close を実装。
+  - §8.7 パフォーマンス: prepared statements をモジュールロード時 1 回だけコンパイル。
+  - §9.1 R1: DB 書き込み失敗時も UI を止めず、トーストで通知。
+- 設計逸脱:
+  - **better-sqlite3 未使用（§1.1 許可済みフォールバック）**: Windows + Node v24 環境でネイティブビルド失敗のため `node:sqlite` を使用。DESIGN.md が明示的に提示した代替経路。Evaluator 環境で better-sqlite3 がビルド可能なら自動的にそちらが使われる設計（driver.js の try/catch）。
+
+### 技術的判断
+- **DB 駆動抽象化**: `src/db/driver.js` で better-sqlite3 / node:sqlite の API 差異を吸収（両者とも同期 API だが `prepare().run() / all() / get()` の返り値構造が微妙に違う）。これにより repo.js 以降は駆動に依存しないコードを書ける。
+- **ExperimentalWarning 抑制**: Node 22+ の `node:sqlite` は毎回 warning を出すため、driver ロード時だけ `process.emitWarning` をラップして `ExperimentalWarning` カテゴリを吸う → ロード完了後に元に戻す。追加で `npm start` に `--no-warnings=ExperimentalWarning` を付与（二重防御）。
+- **冪等 session close**: `WHERE id=? AND user_uuid=? AND closed_at IS NULL` + `changes=0 → {alreadyClosed:true}` で同じ sessionId に対する多重 close を安全化。Feature 21「新しく始める」や「新しい相談を始める」ボタンの連打耐性。
+- **SSE + DB 書き込みの順序**: (1) 生成前に user メッセージ INSERT、(2) 生成完了後 `done` 前に assistant INSERT、(3) `done` payload に `assistantMessageId` を含めてクライアント側の一時 id と差し替え。途中で接続が切れても user 側は残る設計。
+- **気分推移の 3 点表示**: DESIGN §4.3 R6 の「`floor(N/2)` 中盤」を採用。N=1 のときは中盤を出さず最初のみ表示、N≥2 から 3 点表示に切り替え（UX の崩れ防止）。
+- **hash ベースルーター**: `#/history/:id` など deep-link 対応が必要だが、SPA のまま静的ファイル配信で動かしたいので HashRouter 相当を自作。History API を使わないことでサーバ側にリライト設定が不要になる利点もある。
+
+### 既知の問題
+- **better-sqlite3 のビルド**: Node v24 + Windows 11 環境ではプリビルドバイナリ未配布 + Visual Studio Build Tools 未導入のためビルド失敗。`node:sqlite` にフォールバックしている。Evaluator 環境に Node 22+ があれば問題なく動く想定。
+- **Node 22 未満の環境**: `better-sqlite3` のビルドも `node:sqlite` 組み込みも無い場合、サーバ起動時に明示的にエラーで落ちる（driver.js が両方試して失敗）。README ないし DESIGN §1.1 の前提通り。
+- **`data/app.db` の WAL ファイル**: `app.db-wal` / `app.db-shm` は `data/.gitignore` で既に無視済み。git status でも出ない。
+- **履歴画面のページネーション未実装**: SPEC §3.20 に言及なしのため、現状は全件返却。将来セッション数が膨大になれば要検討。
+- **Feature 16「本日の変化サマリ」との関係**: Sprint 6 の summary 機能は session 内の emotions[] から計算するため、Feature 21 の「続きから再開」時も `state.restoreFromServer` で emotions が復元されるので問題なく動作する想定（実装確認済み）。
+
+### 次スプリントへの申し送り
+- Sprint 8 以降（未発表）で想定される拡張ポイント:
+  - 履歴のページネーション/検索/カテゴリフィルタ
+  - ユーザー設定画面（名前変更・削除・エクスポート）
+  - emotion_records の可視化（週次/月次グラフ）
+  - 別ブラウザ/別端末での履歴共有（現状 1 UUID = 1 端末）
+- Evaluator へ先に共有したい実装詳細:
+  - localStorage キーは **`consultationApp.userUuid`** と **`consultationApp.userName`** の 2 つのみ（`consultationApp.*` プレフィクス）
+  - 初回アクセステストは localStorage クリア + `#/onboarding` へのリダイレクト確認が必要
+  - 「再開モーダル」テストは、ユーザー発言を 1 件送信した直後にブラウザをリロードする（クローズイベントなし）ことで再現
+  - better-sqlite3 が Evaluator 環境でビルドできたか / node:sqlite に落ちたかは起動ログ `DB initialized: data/app.db (driver: ***, WAL)` で確認可能
+  - 履歴画面のセッションが他ユーザーに漏れていないかの確認は、2 つの UUID で別セッションを作って片方で `/api/history/:id` を叩く手順
+
+### 総合自己評価: **A**
+- Feature 18 / 19 / 20 / 21 の全受け入れ基準を機能レベルで達成
+- DESIGN.md の技術選定・処理方針・リスク対策（§1.1 / §4.2-4.5 / §5.1-5.2 / §6.2-6.6 / §7.4-7.6 / §8.7 / §9.1）を全て遵守
+- 設計逸脱は better-sqlite3 → node:sqlite フォールバックのみ（§1.1 で許可済み経路、独断の変更ではない）
+- Sprint 5 SSE 安全策 / Sprint 6 感情トラッカー append-only / messageId 差し替えを完全保持
+- サーバ起動スモーク（`npm start` → `DB initialized:` + `Server running at http://localhost:3000`）、主要 API（`POST /api/user/register` / `POST /api/sessions` / `GET /resumable` / `POST /:id/close` の冪等性）を curl で実測確認
+- 仕様書にない機能追加なし（Feature 18/19/20/21 のみ、Sprint 6 以前の回帰は保持）
+- **S ではない理由**: better-sqlite3 が Evaluator 環境で成功するかは未確認（設計上フォールバックが働くが Windows 依存の動作差分が残り得る）、履歴画面のページネーション等のリッチ化は未対応

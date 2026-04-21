@@ -1,16 +1,139 @@
-// api.js — fetch ラッパ。Sprint 6 時点では素通しだが、
-// Sprint 7 で x-user-uuid ヘッダ自動付与を差し込めるようにここに集約する。
+// api.js — fetch ラッパ。Sprint 7 で x-user-uuid ヘッダ自動付与 + REST エンドポイントの集約。
+
+import { state } from "./state.js";
 
 const OVERALL_TIMEOUT_MS = 60000;
 const IDLE_TIMEOUT_MS = 20000;
 
 /**
+ * localStorage から UUID を毎回読み出し、ヘッダに x-user-uuid を自動付与する fetch。
+ * メソッドや body は呼び出し側が自由に組める。
+ */
+async function apiFetch(input, init = {}) {
+  const headers = new Headers(init.headers || {});
+  // Content-Type が明示されてなく、body があるなら JSON 前提で付与
+  if (!headers.has("Content-Type") && init.body && typeof init.body === "string") {
+    headers.set("Content-Type", "application/json");
+  }
+  const uuid = state.getUserUuid();
+  if (uuid && !headers.has("x-user-uuid")) {
+    headers.set("x-user-uuid", uuid);
+  }
+  return fetch(input, { ...init, headers });
+}
+
+/**
+ * 統一エラーハンドラ。成功時は JSON を返し、失敗時は Error を throw（message にサーバ側 error を入れる）。
+ */
+async function handleJson(res) {
+  if (res.status === 204) return null;
+  const ct = res.headers.get("content-type") || "";
+  if (!res.ok) {
+    let msg = `HTTP ${res.status}`;
+    if (ct.includes("application/json")) {
+      try {
+        const body = await res.json();
+        if (body && body.error) msg = body.error;
+      } catch (_) {}
+    }
+    const err = new Error(msg);
+    err.status = res.status;
+    throw err;
+  }
+  if (ct.includes("application/json")) {
+    return res.json();
+  }
+  return null;
+}
+
+// ---------- User ----------
+
+export async function registerUser(userName) {
+  const res = await apiFetch("/api/user/register", {
+    method: "POST",
+    body: JSON.stringify({ userName }),
+  });
+  return handleJson(res);
+}
+
+export async function getUser(uuid) {
+  const res = await apiFetch(`/api/user/${encodeURIComponent(uuid)}`, { method: "GET" });
+  if (res.status === 404) {
+    const err = new Error("ユーザーが見つかりません。");
+    err.status = 404;
+    throw err;
+  }
+  return handleJson(res);
+}
+
+// ---------- Sessions ----------
+
+export async function createSession(clientSessionId) {
+  const res = await apiFetch("/api/sessions", {
+    method: "POST",
+    body: JSON.stringify({ clientSessionId: clientSessionId || undefined }),
+  });
+  return handleJson(res);
+}
+
+export async function closeSession(sessionId) {
+  const res = await apiFetch(
+    `/api/sessions/${encodeURIComponent(sessionId)}/close`,
+    { method: "POST", body: JSON.stringify({}) }
+  );
+  return handleJson(res);
+}
+
+/**
+ * 204 → null, 200 → { session, messages, emotions }。
+ */
+export async function getResumableSession() {
+  const uuid = state.getUserUuid();
+  if (!uuid) return null;
+  const res = await apiFetch(
+    `/api/sessions/resumable?uuid=${encodeURIComponent(uuid)}`,
+    { method: "GET" }
+  );
+  return handleJson(res);
+}
+
+// ---------- Emotions ----------
+
+export async function saveEmotion({ sessionId, messageId, emojiValue }) {
+  const res = await apiFetch("/api/emotions", {
+    method: "POST",
+    body: JSON.stringify({ sessionId, messageId, emojiValue }),
+  });
+  return handleJson(res);
+}
+
+// ---------- History ----------
+
+export async function listHistory() {
+  const uuid = state.getUserUuid();
+  if (!uuid) return { sessions: [] };
+  const res = await apiFetch(`/api/history?uuid=${encodeURIComponent(uuid)}`, {
+    method: "GET",
+  });
+  return handleJson(res);
+}
+
+export async function getHistoryDetail(sessionId) {
+  const res = await apiFetch(`/api/history/${encodeURIComponent(sessionId)}`, {
+    method: "GET",
+  });
+  return handleJson(res);
+}
+
+// ---------- Consult Stream ----------
+
+/**
  * /api/consult/stream を呼び、SSE を 1 行ずつハンドラへ渡す。
  * @param {Object} payload - body 本体（messages / category / mode / lastEmotion ほか）
  * @param {Object} handlers
- * @param {(text: string) => void} handlers.onDelta - 差分テキスト到着時
- * @param {(reply: string) => void} handlers.onDone - 完了通知（サーバ確定 reply）
- * @param {(err: Error) => void} handlers.onError - 失敗時（1 回のみ呼ばれる）
+ * @param {(text: string) => void} handlers.onDelta
+ * @param {(payload: {reply, assistantMessageId, persisted}) => void} handlers.onDone
+ * @param {(err: Error) => void} handlers.onError
  * @returns {{ cancel: () => void, done: Promise<void> }}
  */
 export function consultStream(payload, handlers) {
@@ -48,9 +171,14 @@ export function consultStream(payload, handlers) {
 
   const done = (async () => {
     try {
+      // Sprint 7: x-user-uuid ヘッダを付与（apiFetch 経由では SSE が読みづらいので手動）
+      const headers = { "Content-Type": "application/json" };
+      const uuid = state.getUserUuid();
+      if (uuid) headers["x-user-uuid"] = uuid;
+
       const res = await fetch("/api/consult/stream", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(payload),
         signal: abortController.signal,
       });
@@ -74,6 +202,8 @@ export function consultStream(payload, handlers) {
       let buffer = "";
       let streamStarted = false;
       let serverFinalReply = null;
+      let serverAssistantMessageId = null;
+      let serverPersisted = undefined;
       let serverSignaledError = null;
       resetIdleTimer();
 
@@ -94,6 +224,12 @@ export function consultStream(payload, handlers) {
         } else if (eventName === "done") {
           if (parsed && typeof parsed.reply === "string") {
             serverFinalReply = parsed.reply;
+          }
+          if (parsed && typeof parsed.assistantMessageId === "string") {
+            serverAssistantMessageId = parsed.assistantMessageId;
+          }
+          if (parsed && typeof parsed.persisted === "boolean") {
+            serverPersisted = parsed.persisted;
           }
         }
       };
@@ -129,7 +265,12 @@ export function consultStream(payload, handlers) {
       }
 
       try {
-        handlers.onDone && handlers.onDone(serverFinalReply);
+        handlers.onDone &&
+          handlers.onDone({
+            reply: serverFinalReply,
+            assistantMessageId: serverAssistantMessageId,
+            persisted: serverPersisted,
+          });
       } catch (_) {}
     } catch (err) {
       let msg;

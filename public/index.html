@@ -27,9 +27,13 @@
     </defs>
   </svg>
 
-  <header class="header">
+  <header class="header" id="app-header">
     <h1 class="header-title">こころの相談室</h1>
     <p class="header-subtitle">あなたの悩みに寄り添うAIカウンセラー</p>
+    <div class="header-user-row">
+      <span id="header-user-name" class="header-user-name" hidden aria-live="polite"></span>
+      <a href="#/history" id="header-history-link" class="header-history-link" hidden>過去の相談履歴</a>
+    </div>
     <button id="new-consultation-button" class="new-consultation-button" disabled aria-label="新しい相談を始める">
       新しい相談を始める
     </button>
@@ -47,7 +51,16 @@
   <!-- Feature 16: 本日の変化サマリカード（モーダル） -->
   <div id="summary-modal" class="summary-modal" hidden aria-hidden="true"></div>
 
-  <main class="chat-container">
+  <!-- Feature 21: 中断した会話の再開モーダル -->
+  <div id="resume-modal" class="resume-modal" hidden aria-hidden="true"></div>
+
+  <!-- Feature 18: オンボーディング画面 -->
+  <section id="onboarding-screen" class="onboarding-screen" hidden aria-label="ユーザー名登録"></section>
+
+  <!-- Feature 20: 過去の相談履歴画面 -->
+  <section id="history-screen" class="history-screen-container" hidden aria-label="過去の相談履歴"></section>
+
+  <main class="chat-container" id="chat-container">
     <div id="chat-messages" class="chat-messages">
       <!-- Messages will appear here -->
     </div>
