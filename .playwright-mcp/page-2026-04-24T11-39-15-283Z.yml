@@ -1,0 +1,68 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - heading "こころの相談室" [level=1] [ref=e3]
+    - paragraph [ref=e4]: あなたの悩みに寄り添うAIカウンセラー
+    - generic [ref=e5]:
+      - generic [ref=e6]: ようこそ、テスト太郎さん
+      - link "過去の相談履歴" [ref=e7] [cursor=pointer]:
+        - /url: "#/history"
+    - button "新しい相談を始める" [ref=e8] [cursor=pointer]
+    - generic [ref=e10]:
+      - button "🍂" [ref=e11] [cursor=pointer]
+      - button "🌊" [ref=e12] [cursor=pointer]
+      - button "🌿" [ref=e13] [cursor=pointer]
+      - button "🌙" [ref=e14] [cursor=pointer]
+      - button "🌸" [ref=e15] [cursor=pointer]
+  - main [ref=e24]:
+    - generic [ref=e25]:
+      - generic [ref=e50]:
+        - generic [ref=e51]: あなた
+        - text: 元気が出ません
+      - generic [ref=e52]:
+        - generic [ref=e53]: AIカウンセラー
+        - text: お疲れさまです。元気が出ないとのこと、とてもつらい気持ちでいらっしゃるのですね。そんな状態でも、こうして相談してくださったことに、まずは感謝したいと思います。 元気が出ない時は、無理に頑張ろうとせず、今の自分の気持ちをそのまま受け入れることも大切です。人には調子の良い時もあれば、そうでない時もあります。それは自然なことなんです。 少しでも心が軽くなるように、こんなことから始めてみてはいかがでしょうか： ・深呼吸を3回してみる ・温かい飲み物をゆっくり味わう ・好きな音楽を聴いたり、短い散歩をしてみる ・小さなことでも、今日できたことを一つ思い出してみる 一人で抱え込まず、信頼できる人に話を聞いてもらうことも大切です。 今は辛い時期かもしれませんが、あなたは決して一人ではありません。どんな小さなことでも、また何かお話ししたくなったら、いつでもお聞かせくださいね。
+      - group "今の気持ちを記録する" [ref=e54]:
+        - generic [ref=e55]: 今の気持ちは？
+        - generic [ref=e56]:
+          - button "とてもつらい" [ref=e57] [cursor=pointer]: 😢
+          - button "不安" [ref=e58] [cursor=pointer]: 😟
+          - button "ふつう" [ref=e59] [cursor=pointer]: 😐
+          - button "前向き" [pressed] [ref=e60] [cursor=pointer]: 🙂
+          - button "とても前向き" [ref=e61] [cursor=pointer]: 😊
+      - generic [ref=e62]:
+        - generic [ref=e63]: あなた
+        - text: ありがとう
+      - generic [ref=e64]:
+        - generic [ref=e65]: AIカウンセラー
+        - text: こちらこそ、ありがとうございます。 お話しを聞かせてくださって、本当にありがとうございました。元気が出ない中でも、こうして一歩を踏み出してくださったあなたの勇気を、とても素晴らしく思います。 直近では前向きな気持ちを記録されていたとのことですね。その調子です！今は少し調子が下がっているかもしれませんが、あなたには前向きになれる力がちゃんとあるということの証拠でもあります。 気持ちには波があるのが自然です。今日は無理をせず、ご自分を大切にしてくださいね。そして、また前向きな気持ちが戻ってきた時には、一緒に次の一歩を考えましょう。 あなたのペースで大丈夫です。いつでも、ここにいますからね。 どうぞ、お身体も大切になさってください。
+      - group "今の気持ちを記録する" [ref=e66]:
+        - generic [ref=e67]: 今の気持ちは？
+        - generic [ref=e68]:
+          - button "とてもつらい" [ref=e69] [cursor=pointer]: 😢
+          - button "不安" [ref=e70] [cursor=pointer]: 😟
+          - button "ふつう" [ref=e71] [cursor=pointer]: 😐
+          - button "前向き" [ref=e72] [cursor=pointer]: 🙂
+          - button "とても前向き" [pressed] [ref=e73] [cursor=pointer]: 😊
+    - generic [ref=e26]:
+      - generic [ref=e27]:
+        - paragraph [ref=e28]: "相談モード:"
+        - generic [ref=e29]:
+          - button "バランス" [ref=e30] [cursor=pointer]
+          - button "共感モード" [ref=e31] [cursor=pointer]
+          - button "解決モード" [ref=e32] [cursor=pointer]
+        - paragraph [ref=e33]: 共感とアドバイスをバランスよく提供します
+      - generic [ref=e34]:
+        - paragraph [ref=e35]: "相談カテゴリ（任意）:"
+        - generic [ref=e36]:
+          - button "仕事" [ref=e37] [cursor=pointer]
+          - button "人間関係" [ref=e38] [cursor=pointer]
+          - button "健康" [ref=e39] [cursor=pointer]
+          - button "日常生活" [ref=e40] [cursor=pointer]
+          - button "恋愛" [ref=e41] [cursor=pointer]
+          - button "お金" [ref=e42] [cursor=pointer]
+      - generic [ref=e43]:
+        - generic [ref=e44]:
+          - textbox "相談内容入力欄" [ref=e45]:
+            - /placeholder: お悩みをここに入力してください...
+          - generic [ref=e46]: 0 / 1000
+        - button "送信" [ref=e47] [cursor=pointer]: 送信する

@@ -1,0 +1,39 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - heading "こころの相談室" [level=1] [ref=e3]
+    - paragraph [ref=e4]: あなたの悩みに寄り添うAIカウンセラー
+    - generic [ref=e5]:
+      - generic [ref=e6]: ようこそ、テスト太郎さん
+      - link "過去の相談履歴" [ref=e7] [cursor=pointer]:
+        - /url: "#/history"
+    - button "新しい相談を始める" [disabled] [ref=e8]
+    - generic [ref=e10]:
+      - button "🍂" [ref=e11] [cursor=pointer]
+      - button "🌊" [ref=e12] [cursor=pointer]
+      - button "🌿" [ref=e13] [cursor=pointer]
+      - button "🌙" [ref=e14] [cursor=pointer]
+      - button "🌸" [ref=e15] [cursor=pointer]
+  - main [ref=e16]:
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - paragraph [ref=e20]: "相談モード:"
+        - generic [ref=e21]:
+          - button "バランス" [ref=e22] [cursor=pointer]
+          - button "共感モード" [ref=e23] [cursor=pointer]
+          - button "解決モード" [ref=e24] [cursor=pointer]
+        - paragraph [ref=e25]: 共感とアドバイスをバランスよく提供します
+      - generic [ref=e26]:
+        - paragraph [ref=e27]: "相談カテゴリ（任意）:"
+        - generic [ref=e28]:
+          - button "仕事" [ref=e29] [cursor=pointer]
+          - button "人間関係" [ref=e30] [cursor=pointer]
+          - button "健康" [ref=e31] [cursor=pointer]
+          - button "日常生活" [ref=e32] [cursor=pointer]
+          - button "恋愛" [ref=e33] [cursor=pointer]
+          - button "お金" [ref=e34] [cursor=pointer]
+      - generic [ref=e35]:
+        - generic [ref=e36]:
+          - textbox "相談内容入力欄" [ref=e37]:
+            - /placeholder: お悩みをここに入力してください...
+          - generic [ref=e38]: 0 / 1000
+        - button "送信" [ref=e39] [cursor=pointer]: 送信する

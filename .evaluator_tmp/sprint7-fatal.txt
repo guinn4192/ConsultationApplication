@@ -1,0 +1,5 @@
+page.click: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for locator('.resume-button-resume')[22m
+
+    at main (C:\ConsultationApplication\.evaluator_tmp\test-sprint7.mjs:422:14)

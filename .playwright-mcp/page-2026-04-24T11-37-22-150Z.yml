@@ -1,0 +1,46 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - heading "こころの相談室" [level=1] [ref=e3]
+    - paragraph [ref=e4]: あなたの悩みに寄り添うAIカウンセラー
+    - generic [ref=e5]:
+      - generic [ref=e6]: ようこそ、テスト太郎さん
+      - link "過去の相談履歴" [ref=e7] [cursor=pointer]:
+        - /url: "#/history"
+    - button "新しい相談を始める" [disabled] [ref=e8]
+    - generic [ref=e10]:
+      - button "🍂" [ref=e11] [cursor=pointer]
+      - button "🌊" [ref=e12] [cursor=pointer]
+      - button "🌿" [ref=e13] [cursor=pointer]
+      - button "🌙" [ref=e14] [cursor=pointer]
+      - button "🌸" [ref=e15] [cursor=pointer]
+  - main [ref=e24]:
+    - generic [ref=e25]:
+      - generic [ref=e50]:
+        - generic [ref=e51]: あなた
+        - text: 元気が出ません
+      - generic [ref=e52]:
+        - generic [ref=e53]: AIカウンセラー
+        - text: お疲れさまです。元気が出ないとのこと、とてもつらい気持ちでいらっしゃるのですね。そんな状態でも、こうして相談してくださったことに、まずは感謝したいと思います。 元気が出ない時は、無理に頑張ろうとせず、今の自分の気持ちをそのまま受け入れることも大切です。人には調子の良い時もあれば、そうでない時もあります。それは自然なことなんです。 少しでも心が軽くなるように、こんなことから始めてみてはいかがでしょうか： ・深呼吸を3回してみる ・温かい飲み物をゆっくり味わう ・好きな音楽を聴いたり、短い散歩をしてみる ・小さなことでも、今日できたことを一つ思い出してみる 一人で抱え込まず ▍
+    - generic [ref=e26]:
+      - generic [ref=e27]:
+        - paragraph [ref=e28]: "相談モード:"
+        - generic [ref=e29]:
+          - button "バランス" [ref=e30] [cursor=pointer]
+          - button "共感モード" [ref=e31] [cursor=pointer]
+          - button "解決モード" [ref=e32] [cursor=pointer]
+        - paragraph [ref=e33]: 共感とアドバイスをバランスよく提供します
+      - generic [ref=e34]:
+        - paragraph [ref=e35]: "相談カテゴリ（任意）:"
+        - generic [ref=e36]:
+          - button "仕事" [ref=e37] [cursor=pointer]
+          - button "人間関係" [ref=e38] [cursor=pointer]
+          - button "健康" [ref=e39] [cursor=pointer]
+          - button "日常生活" [ref=e40] [cursor=pointer]
+          - button "恋愛" [ref=e41] [cursor=pointer]
+          - button "お金" [ref=e42] [cursor=pointer]
+      - generic [ref=e43]:
+        - generic [ref=e44]:
+          - textbox "相談内容入力欄" [disabled] [ref=e45]:
+            - /placeholder: お悩みをここに入力してください...
+          - generic [ref=e46]: 0 / 1000
+        - button "送信" [disabled] [ref=e47]: 送信する

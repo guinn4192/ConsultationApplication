@@ -1,0 +1,39 @@
+[2026-04-22T11:02:04.299Z] === Feature 18: Onboarding + UUID ===
+[2026-04-22T11:02:05.738Z] [F18-1] 10/10 - 初回アクセスでオンボーディング画面が表示される
+[2026-04-22T11:02:05.738Z]   hash=#/onboarding, onboarding visible, chat hidden, name+submit present
+[2026-04-22T11:02:06.290Z] [F18-2] 10/10 - 空欄確定でエラー表示+画面遷移なし
+[2026-04-22T11:02:06.290Z]   error="お名前を入力してください。"
+[2026-04-22T11:02:08.861Z] [F18-3] 10/10 - ユーザー名登録でUUID発行・localStorage保存・相談画面遷移
+[2026-04-22T11:02:08.861Z]   uuid=a4f92e5c..., name=テスト太郎
+[2026-04-22T11:02:08.869Z] [F18-4] 10/10 - ヘッダにユーザー名が表示される
+[2026-04-22T11:02:08.869Z]   text="ようこそ、テスト太郎さん"
+[2026-04-22T11:02:11.429Z] [F18-5] 10/10 - リロード時オンボスキップ・同ユーザー名維持
+[2026-04-22T11:02:11.429Z]   hash=#/, uuid preserved
+[2026-04-22T11:02:11.430Z] [F18-6] 10/10 - localStorageキー名が規約どおり
+[2026-04-22T11:02:11.430Z]   keys=["consultationApp.userName","consultationApp.userUuid"]
+[2026-04-22T11:02:11.431Z] [F18-7] 10/10 - パスワード/メール/電話入力欄が一切存在しない
+[2026-04-22T11:02:11.431Z]   none
+[2026-04-22T11:02:11.431Z] === Feature 19: DB persistence ===
+[2026-04-22T11:04:13.091Z] [F19-1] 10/10 - 相談送信後messagesにuser+assistant保存
+[2026-04-22T11:04:13.091Z]   user=1, assistant=1
+[2026-04-22T11:04:13.091Z] [F19-3] 10/10 - messages に mode=empathy / category=日常生活 保存
+[2026-04-22T11:04:13.091Z]   mode=empathy, category=日常生活
+(node:3572) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[2026-04-22T11:04:14.333Z] [F19-2] 10/10 - 絵文字クリックで emotion_records 保存+message_id 紐付け
+[2026-04-22T11:04:14.333Z]   emotions=1, emoji_value=4, hasMsgId=true
+[2026-04-22T11:04:18.390Z] [F19-4] 10/10 - ブラウザ再起動後 同UUID認識+DB前回データ残存
+[2026-04-22T11:04:18.390Z]   uuid preserved, /api/history sessions=1
+[2026-04-22T11:04:22.168Z] [F19-5] 10/10 - 別コンテキストで別UUID+前ユーザーのデータ不可視
+[2026-04-22T11:04:22.168Z]   uuid2=8284ca57..., sessionsForUser2=0
+[2026-04-22T11:04:22.175Z] === Feature 21: Resume modal ===
+[2026-04-22T11:04:22.176Z] [F21-1] 2/10 - 相談送信→リロードで再開モーダル表示
+[2026-04-22T11:04:22.177Z]   modal flashed briefly then was dismissed by navigation (bug: modal appears then immediately closes, ~7ms lifetime). MutationObserver saw modal at HTML len=500 but it was dismissed before user could interact.
+[2026-04-22T11:04:22.177Z] [F21-2] 7/10 - モーダルに「続きから」「新しく始める」2ボタン
+[2026-04-22T11:04:22.178Z]   buttons found in HTML but modal dismissed too fast for user interaction (text: "続きから？" / "続きから話しますか？
+
+（前回のはじめ: 最近よく眠れなくて、日常の些細なことに悩んでしまいます。）" / "続きから再開する" / "新しく始める") 
+[2026-04-22T11:04:24.318Z] [F21-3] 10/10 - 「続きから」で前発言が即時表示（ストリーミングなし）
+[2026-04-22T11:04:24.318Z]   msgs=2, no streaming element
+[2026-04-22T11:04:24.319Z] [F21-4] 10/10 - 感情記録の .active 状態が復元される
+[2026-04-22T11:04:24.319Z]   active buttons=1

@@ -1,0 +1,7 @@
+
+> consultationapplication@1.0.0 start
+> node --no-warnings=ExperimentalWarning server.js
+
+DB initialized: data/app.db (driver: node:sqlite, WAL)
+Closed 1 orphan sessions
+Server running at http://localhost:3000

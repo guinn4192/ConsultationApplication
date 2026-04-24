@@ -75,7 +75,30 @@
       "Bash(npm ls *)",
       "Bash(findstr node.exe)",
       "Bash(powershell -Command \"Stop-Process -Id 16672 -Force\")",
-      "Bash(rm -f data/app.db data/app.db-journal data/app.db-wal data/app.db-shm)"
+      "Bash(rm -f data/app.db data/app.db-journal data/app.db-wal data/app.db-shm)",
+      "Bash(ls data/)",
+      "Bash(ls .evaluator_tmp/)",
+      "Bash(mkdir -p .evaluator_tmp/db-backup)",
+      "Bash(mv data/app.db* .evaluator_tmp/db-backup/)",
+      "Bash(mv data/app.db* .evaluator_tmp/db-backup2/)",
+      "Bash(mkdir -p .evaluator_tmp/db-backup2)",
+      "Bash(tee .evaluator_tmp/sprint7-v2-run.log)",
+      "Bash(mkdir -p /c/ConsultationApplication/.evaluator_tmp/db-backup3)",
+      "Bash(cp -v /c/ConsultationApplication/data/app.db /c/ConsultationApplication/.evaluator_tmp/db-backup3/)",
+      "Bash(cp -v /c/ConsultationApplication/data/app.db-shm /c/ConsultationApplication/.evaluator_tmp/db-backup3/)",
+      "Bash(cp -v /c/ConsultationApplication/data/app.db-wal /c/ConsultationApplication/.evaluator_tmp/db-backup3/)",
+      "Bash(rm -f /c/ConsultationApplication/data/app.db /c/ConsultationApplication/data/app.db-shm /c/ConsultationApplication/data/app.db-wal)",
+      "Bash(powershell.exe -Command \"Get-Process -Name node -ErrorAction SilentlyContinue | Select-Object Id, ProcessName, StartTime, CommandLine | Format-Table -AutoSize\")",
+      "Bash(powershell.exe -Command \"Stop-Process -Id 13804,21688 -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 1; Get-Process -Name node -ErrorAction SilentlyContinue | Select-Object Id | Format-Table -AutoSize\")",
+      "Bash(cp -v /c/ConsultationApplication/.evaluator_tmp/db-backup3/app.db /c/ConsultationApplication/data/)",
+      "Bash(cp -v /c/ConsultationApplication/.evaluator_tmp/db-backup3/app.db-shm /c/ConsultationApplication/data/)",
+      "Bash(cp -v /c/ConsultationApplication/.evaluator_tmp/db-backup3/app.db-wal /c/ConsultationApplication/data/)",
+      "Bash(tee .evaluator_tmp/sprint7-server.log)",
+      "mcp__playwright__browser_type",
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_wait_for",
+      "WebSearch",
+      "Bash(tee .evaluator_tmp/verify-server.log)"
     ]
   }
 }

@@ -1,0 +1,54 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - heading "こころの相談室" [level=1] [ref=e3]
+    - paragraph [ref=e4]: あなたの悩みに寄り添うAIカウンセラー
+    - generic [ref=e5]:
+      - generic [ref=e6]: ようこそ、テスト太郎さん
+      - link "過去の相談履歴" [ref=e7] [cursor=pointer]:
+        - /url: "#/history"
+    - button "新しい相談を始める" [ref=e8] [cursor=pointer]
+    - generic [ref=e10]:
+      - button "🍂" [ref=e11] [cursor=pointer]
+      - button "🌊" [ref=e12] [cursor=pointer]
+      - button "🌿" [ref=e13] [cursor=pointer]
+      - button "🌙" [ref=e14] [cursor=pointer]
+      - button "🌸" [ref=e15] [cursor=pointer]
+  - main [ref=e16]:
+    - generic [ref=e17]:
+      - generic [ref=e42]:
+        - generic [ref=e43]: あなた
+        - text: 最近夜眠れなくて困っています
+      - generic [ref=e44]:
+        - generic [ref=e45]: AIカウンセラー
+        - text: つらいですね。夜眠れないというのは本当に大変な状況だと思います。 布団に入っても目が冴えてしまったり、考え事が頭をめぐってしまったりして、眠りにつけない時間が続くと、不安や焦りの気持ちが強くなってしまいますよね。 睡眠がうまく取れないと、日中の疲れも蓄積されて、心身ともにしんどさを感じていらっしゃるのではないでしょうか。そんな状態が続いているご自分を、とても心配に思われているお気持ちもよく分かります。 夜、一人で過ごす時間に眠れずにいると、孤独感や不安感も一層強く感じられるかもしれませんね。 今のお気持ちを、もう少し詳しく聞かせていただけますか？どんな思いで夜を過ごされているのでしょうか。
+      - group "今の気持ちを記録する" [ref=e46]:
+        - generic [ref=e47]: 今の気持ちは？
+        - generic [ref=e48]:
+          - button "とてもつらい" [ref=e49] [cursor=pointer]: 😢
+          - button "不安" [ref=e50] [cursor=pointer]: 😟
+          - button "ふつう" [ref=e51] [cursor=pointer]: 😐
+          - button "前向き" [ref=e52] [cursor=pointer]: 🙂
+          - button "とても前向き" [ref=e53] [cursor=pointer]: 😊
+    - generic [ref=e20]:
+      - generic [ref=e21]:
+        - paragraph [ref=e22]: "相談モード:"
+        - generic [ref=e23]:
+          - button "バランス" [ref=e24] [cursor=pointer]
+          - button "共感モード" [ref=e25] [cursor=pointer]
+          - button "解決モード" [ref=e26] [cursor=pointer]
+        - paragraph [ref=e27]: 解決策は提示せず、ひたすら親身に寄り添い傾聴します
+      - generic [ref=e28]:
+        - paragraph [ref=e29]: "相談カテゴリ（任意）:"
+        - generic [ref=e30]:
+          - button "仕事" [ref=e31] [cursor=pointer]
+          - button "人間関係" [ref=e32] [cursor=pointer]
+          - button "健康" [ref=e33] [cursor=pointer]
+          - button "日常生活" [ref=e34] [cursor=pointer]
+          - button "恋愛" [ref=e35] [cursor=pointer]
+          - button "お金" [ref=e36] [cursor=pointer]
+      - generic [ref=e37]:
+        - generic [ref=e38]:
+          - textbox "相談内容入力欄" [ref=e39]:
+            - /placeholder: お悩みをここに入力してください...
+          - generic [ref=e40]: 0 / 1000
+        - button "送信" [ref=e41] [cursor=pointer]: 送信する
