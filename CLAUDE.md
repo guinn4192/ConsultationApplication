@@ -149,3 +149,20 @@ specs/
 - 実装中に設計の問題を発見した場合、Generatorは実装を止めて Designer への設計変更依頼としてユーザーに報告する
 - Designerのみが `specs/DESIGN.md` を変更できる
 - 設計変更後、影響を受けるスプリントの再評価が必要
+
+---
+
+## ドキュメント Wiki
+
+本プロジェクトのコードベース・仕様・データ構造を継続的にドキュメント化する **LLM-Wiki（CAWiki）** が `wiki/` 配下にある。
+
+- スキーマ・運用規約: `wiki/CLAUDE.md`
+- 関連スキル: `/ingest`, `/query`, `/lint`, `/update-index`（`.claude/skills/` 配下）
+- 関連サブエージェント: `wiki-linter`（`.claude/agents/wiki-linter.md`）
+
+ドキュメント参照・追加が目的のときは `wiki/CLAUDE.md` のスキーマに従う。**実装フロー（Planner→Designer→Generator→Evaluator）とは別系統** で、相互に上書きしない:
+
+- 実装側は `specs/`, ソースコードのみ書き込む
+- Wiki 側は `wiki/` 配下のみ書き込む
+
+Obsidian で開く場合は `wiki/` ディレクトリを vault として開く（`wiki/.obsidian/` が vault 設定）。

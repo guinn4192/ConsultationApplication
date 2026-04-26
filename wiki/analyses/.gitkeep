@@ -1,0 +1,5 @@
+# analyses/
+
+クエリの filed-back 先。比較・深堀り・調査メモなど、対話の中で生まれた合成知見を残す。
+
+ファイル名は `kebab-case.md`、フロントマター `type: analysis` を付けること。

@@ -1,0 +1,8 @@
+# topics/
+
+合成（synthesis）ページを格納する。複数のentity/conceptをまたぐテーマ。例:
+- 認証フロー全体
+- 相談ワークフロー
+- リクエスト処理パイプライン
+
+ファイル名は `kebab-case.md`、フロントマター `type: topic` を付けること。

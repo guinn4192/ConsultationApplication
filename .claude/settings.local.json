@@ -98,7 +98,9 @@
       "mcp__playwright__browser_evaluate",
       "mcp__playwright__browser_wait_for",
       "WebSearch",
-      "Bash(tee .evaluator_tmp/verify-server.log)"
+      "Bash(tee .evaluator_tmp/verify-server.log)",
+      "Bash(grep -E \"^[^.].*\\\\.\\(md|txt\\)$\")",
+      "Bash(git check-ignore *)"
     ]
   }
 }
