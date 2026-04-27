@@ -38,6 +38,7 @@ tags: [routes, history, api]
 - [[db-table-sessions]] / [[db-table-messages]] / [[db-table-emotion-records]]
 - [[user-identification]]
 - 呼び出し元: [[client-api]] `listHistory` / `getHistoryDetail`、[[ui-history]]（一覧/詳細描画）
+- [[analyses/client-vs-server-routing]] — `history.js` 同名ファイル問題を含む比較
 
 ## 出典
 

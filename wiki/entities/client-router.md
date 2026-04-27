@@ -41,6 +41,7 @@ tags: [frontend, router, spa]
 - [[client-main]] — 唯一の購読者
 - [[ui-onboarding]] / [[ui-history]] — ルートに対応する画面
 - [[frontend-bootstrap]]
+- [[analyses/client-vs-server-routing]] — クライアントルータとサーバ Router 群の比較
 
 ## 出典
 
