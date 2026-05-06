@@ -4,7 +4,7 @@ sources:
   - C:\ConsultationApplication\src\db\schema.js
   - C:\ConsultationApplication\src\db\repo.js
   - C:\ConsultationApplication\src\routes\sessions.js
-updated: 2026-04-26
+updated: 2026-05-07
 tags: [sessions, lifecycle, idempotency]
 ---
 
@@ -39,6 +39,8 @@ tags: [sessions, lifecycle, idempotency]
 - 二重送信されても新規行は作られず、`getSession` で同じ `startedAt` を返す。
 
 ### Resume
+
+> 用語: [[frontend-glossary#Resume / 再開|Resume]] は「中断していた処理を途中から続行する」一般用語。本節はその固有実装。
 
 [[db-repo]].`getResumableSession` は以下を満たすセッションを最新1件返す:
 
@@ -89,6 +91,7 @@ UPDATE sessions
 - [[db-repo]]
 - [[client-main]] / [[ui-resume]] — クライアント側のライフサイクル操作
 - [[frontend-bootstrap]] — 起動時の再開判定
+- [[frontend-glossary#Resume / 再開|frontend-glossary §Resume]] — 用語の一般定義
 
 ## 出典
 

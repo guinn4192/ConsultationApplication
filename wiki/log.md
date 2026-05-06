@@ -87,3 +87,11 @@ ConsultationApplication向けLLM-Wikiの時系列ログ。append-onlyで保守�
 - 参照ページ: [[client-router]], [[frontend-glossary]], [[spa-architecture]], [[route-user]], [[route-sessions]], [[route-emotions]], [[route-history]]
 - filed-back: [[analyses/client-vs-server-routing]]
 - メモ: クライアント側ハッシュルータとサーバ側Express Router群の二系統を対比。双方向リンクを [[client-router]] / [[spa-architecture]] / [[route-history]] に張り戻し。
+
+## [2026-05-07] query | session-lifecycle の Resume とは何か
+- 参照ページ: [[session-lifecycle]], [[db-repo]], [[route-sessions]], [[ui-resume]], [[frontend-bootstrap]], [[db-schema]]
+- メモ: Resume は「同じユーザー × 未close × 本日開始」の最新1件を返す仕組み。`getResumableSession` のSQL条件と orphan close の組み合わせで「当日のみ」に絞られる設計を確認。filing back は不要と判断。
+
+## [2026-05-07] ingest | Resume を frontend-glossary に追加
+- 触れたページ: [[frontend-glossary]], [[session-lifecycle]]
+- メモ: Resume は一般語（ブラウザ復元・動画続き再生・HTTP Range・OS sleep 等）と判定し、[[frontend-glossary#Resume / 再開]] を新設。プロジェクト固有の「当日のみ」制約は [[session-lifecycle]] §Resume へ誘導。session-lifecycle 側からも `[[frontend-glossary#Resume / 再開|Resume]]` で逆リンク。Obsidian の Page Preview で見出し単位プレビューが効く形式で記述。

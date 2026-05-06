@@ -3,7 +3,8 @@ type: concept
 sources:
   - C:\ConsultationApplication\public\js\main.js
   - C:\ConsultationApplication\public\index.html
-updated: 2026-04-26
+  - C:\ConsultationApplication\src\db\repo.js
+updated: 2026-05-07
 tags: [frontend, glossary, terminology]
 ---
 
@@ -43,13 +44,32 @@ CAWiki のフロントエンド系ページで頻出する **汎用ウェブ用�
 
 [[client-main]] の `showPersistError(msg)` は `#persist-error-toast` を `position: fixed` で画面に挿入し、`role="alert"` / `aria-live="polite"` を付けて 4 秒で fade out するトースト実装。
 
+## Resume / 再開
+
+中断していた処理を **途中から続行する** こと。「最初からやり直す（restart / new）」とは対比的に、**保存された状態を読み出して同じ作業を引き継ぐ** ニュアンスを持つ UX / システム共通の一般用語。
+
+代表例:
+- ブラウザの「前回のセッションを復元」
+- 動画プレーヤーの「続きから再生」
+- HTTP の Range リクエストによる resumable download
+- OS の sleep からの resume
+- ゲームのセーブデータからの再開
+
+単なる "continue" と異なり、resume は **「中断 → 再開」の状態遷移** をはっきり含意する。
+
+本プロジェクトでの具体実装は [[session-lifecycle]] §Resume を参照。一般概念に対し「**当日かつ未close のセッションのみが対象**」という固有制約を載せている点がプロジェクト固有で、これにより日跨ぎでの意図せぬ再開を防いでいる（[[db-schema]] の orphan close と対）。
+
+UI 側の入口は [[ui-resume]] の「続きから / 新しく始める」モーダル、サーバ側のクエリは [[db-repo]].`getResumableSession`。
+
 ## 関連
 
 - [[client-main]] — 上記用語の主な使用箇所
 - [[frontend-entry]] — DOM の供給源（HTML エントリ）
 - [[client-state]] / [[client-router]] — 購読の対象になるイベント源
+- [[session-lifecycle]] / [[ui-resume]] — Resume の固有実装
 
 ## 出典
 
 - `C:\ConsultationApplication\public\js\main.js:1-440`
 - `C:\ConsultationApplication\public\index.html:1-112`
+- `C:\ConsultationApplication\src\db\repo.js:42-50`（resumable クエリ — Resume の実体）
