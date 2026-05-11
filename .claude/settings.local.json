@@ -100,7 +100,14 @@
       "WebSearch",
       "Bash(tee .evaluator_tmp/verify-server.log)",
       "Bash(grep -E \"^[^.].*\\\\.\\(md|txt\\)$\")",
-      "Bash(git check-ignore *)"
+      "Bash(git check-ignore *)",
+      "Bash(cmd *)",
+      "Bash(dir *)",
+      "Bash(rm -f /tmp/test-daily.mjs /tmp/test-daily-final.mjs /tmp/dailyMessage.mjs /tmp/data/dailyMessages.mjs)",
+      "Bash(rmdir /tmp/data)",
+      "Bash(where playwright *)",
+      "Bash(not exist *)",
+      "Bash(tasklist /FI \"IMAGENAME eq node.exe\")"
     ]
   }
 }

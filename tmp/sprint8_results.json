@@ -1,0 +1,678 @@
+{
+  "tc1": {
+    "info": {
+      "exists": true,
+      "visible": true,
+      "weekday": "1",
+      "season": "spring",
+      "text": "新しい一週間、まずは深呼吸から",
+      "label": "今日のひとこと",
+      "meta": "月曜日・春"
+    },
+    "welcome": {
+      "exists": true,
+      "visible": true,
+      "text": "AIカウンセラーこんにちは！「こころの相談室」へようこそ。\n\n私はあなたの悩みに寄り添うAIカウンセラーです。\n仕事、人間関係、健康、日常生活など、どんなことでもお気軽にご相談ください。\n\n【使い方のヒント】\n・下のカテゴリを選ぶと、より的確なアドバイスが受けられます\n・テキスト欄にお悩みを入力して「送信する」を押してください\n・続けて質問すると、会話の流れを踏まえて回答します\n・AI回答の下の絵文字で今の気持ちを記録できます\n・新しい話題で相談したいときは「新しい相談を始める」を押してください"
+    }
+  },
+  "tc1_reload": {
+    "exists": true,
+    "visible": true,
+    "weekday": "1",
+    "season": "spring",
+    "text": "新しい一週間、まずは深呼吸から",
+    "label": "今日のひとこと",
+    "meta": "月曜日・春"
+  },
+  "tc2": {
+    "exists": true,
+    "visible": true,
+    "weekday": "5",
+    "season": "winter",
+    "text": "あと一日、自分に『おつかれ』と言ってあげて",
+    "label": "今日のひとこと",
+    "meta": "金曜日・冬"
+  },
+  "tc3": {
+    "total": 28,
+    "pass": 28,
+    "fail": 0,
+    "details": [
+      {
+        "season": "spring",
+        "dow": 0,
+        "date": "2026-03-01T10:00:00",
+        "expected": "やわらかな春の日曜日、心ものんびり緩めていきましょう",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "0",
+          "season": "spring",
+          "text": "やわらかな春の日曜日、心ものんびり緩めていきましょう",
+          "label": "今日のひとこと",
+          "meta": "日曜日・春"
+        },
+        "ok": true
+      },
+      {
+        "season": "spring",
+        "dow": 1,
+        "date": "2026-03-02T10:00:00",
+        "expected": "新しい一週間、まずは深呼吸から",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "1",
+          "season": "spring",
+          "text": "新しい一週間、まずは深呼吸から",
+          "label": "今日のひとこと",
+          "meta": "月曜日・春"
+        },
+        "ok": true
+      },
+      {
+        "season": "spring",
+        "dow": 2,
+        "date": "2026-03-03T10:00:00",
+        "expected": "芽吹きの火曜日、小さな一歩がきっと花になります",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "2",
+          "season": "spring",
+          "text": "芽吹きの火曜日、小さな一歩がきっと花になります",
+          "label": "今日のひとこと",
+          "meta": "火曜日・春"
+        },
+        "ok": true
+      },
+      {
+        "season": "spring",
+        "dow": 3,
+        "date": "2026-03-04T10:00:00",
+        "expected": "春風が背中を押してくれる水曜日、ゆっくり進んでいきましょう",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "3",
+          "season": "spring",
+          "text": "春風が背中を押してくれる水曜日、ゆっくり進んでいきましょう",
+          "label": "今日のひとこと",
+          "meta": "水曜日・春"
+        },
+        "ok": true
+      },
+      {
+        "season": "spring",
+        "dow": 4,
+        "date": "2026-03-05T10:00:00",
+        "expected": "うららかな木曜日、できたことを少し数えてみませんか",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "4",
+          "season": "spring",
+          "text": "うららかな木曜日、できたことを少し数えてみませんか",
+          "label": "今日のひとこと",
+          "meta": "木曜日・春"
+        },
+        "ok": true
+      },
+      {
+        "season": "spring",
+        "dow": 5,
+        "date": "2026-03-06T10:00:00",
+        "expected": "週末まであと少し、春の光に身を委ねるように",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "5",
+          "season": "spring",
+          "text": "週末まであと少し、春の光に身を委ねるように",
+          "label": "今日のひとこと",
+          "meta": "金曜日・春"
+        },
+        "ok": true
+      },
+      {
+        "season": "spring",
+        "dow": 6,
+        "date": "2026-03-07T10:00:00",
+        "expected": "桜のような土曜日、自分にやさしい時間を過ごせますように",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "6",
+          "season": "spring",
+          "text": "桜のような土曜日、自分にやさしい時間を過ごせますように",
+          "label": "今日のひとこと",
+          "meta": "土曜日・春"
+        },
+        "ok": true
+      },
+      {
+        "season": "summer",
+        "dow": 0,
+        "date": "2026-07-05T10:00:00",
+        "expected": "夏の日曜日、木陰のような穏やかな時間を大切に",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "0",
+          "season": "summer",
+          "text": "夏の日曜日、木陰のような穏やかな時間を大切に",
+          "label": "今日のひとこと",
+          "meta": "日曜日・夏"
+        },
+        "ok": true
+      },
+      {
+        "season": "summer",
+        "dow": 1,
+        "date": "2026-07-06T10:00:00",
+        "expected": "暑い月曜日、無理せずひとつだけ動いてみる、それで十分",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "1",
+          "season": "summer",
+          "text": "暑い月曜日、無理せずひとつだけ動いてみる、それで十分",
+          "label": "今日のひとこと",
+          "meta": "月曜日・夏"
+        },
+        "ok": true
+      },
+      {
+        "season": "summer",
+        "dow": 2,
+        "date": "2026-07-07T10:00:00",
+        "expected": "そよ風の火曜日、自分のペースで進んでいけますように",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "2",
+          "season": "summer",
+          "text": "そよ風の火曜日、自分のペースで進んでいけますように",
+          "label": "今日のひとこと",
+          "meta": "火曜日・夏"
+        },
+        "ok": true
+      },
+      {
+        "season": "summer",
+        "dow": 3,
+        "date": "2026-07-08T10:00:00",
+        "expected": "真夏の水曜日、水分と休憩も大切な仕事のひとつ",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "3",
+          "season": "summer",
+          "text": "真夏の水曜日、水分と休憩も大切な仕事のひとつ",
+          "label": "今日のひとこと",
+          "meta": "水曜日・夏"
+        },
+        "ok": true
+      },
+      {
+        "season": "summer",
+        "dow": 4,
+        "date": "2026-07-09T10:00:00",
+        "expected": "夕立のあとの空のように、今日もどこかに澄んだ瞬間がありますように",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "4",
+          "season": "summer",
+          "text": "夕立のあとの空のように、今日もどこかに澄んだ瞬間がありますように",
+          "label": "今日のひとこと",
+          "meta": "木曜日・夏"
+        },
+        "ok": true
+      },
+      {
+        "season": "summer",
+        "dow": 5,
+        "date": "2026-07-10T10:00:00",
+        "expected": "風鈴が鳴る金曜日、頑張った自分にそっと拍手を",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "5",
+          "season": "summer",
+          "text": "風鈴が鳴る金曜日、頑張った自分にそっと拍手を",
+          "label": "今日のひとこと",
+          "meta": "金曜日・夏"
+        },
+        "ok": true
+      },
+      {
+        "season": "summer",
+        "dow": 6,
+        "date": "2026-07-11T10:00:00",
+        "expected": "蝉時雨の土曜日、心の声にも耳をすませる一日に",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "6",
+          "season": "summer",
+          "text": "蝉時雨の土曜日、心の声にも耳をすませる一日に",
+          "label": "今日のひとこと",
+          "meta": "土曜日・夏"
+        },
+        "ok": true
+      },
+      {
+        "season": "autumn",
+        "dow": 0,
+        "date": "2026-10-04T10:00:00",
+        "expected": "秋の日曜日、ゆっくり淹れたお茶のような静かな時間を",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "0",
+          "season": "autumn",
+          "text": "秋の日曜日、ゆっくり淹れたお茶のような静かな時間を",
+          "label": "今日のひとこと",
+          "meta": "日曜日・秋"
+        },
+        "ok": true
+      },
+      {
+        "season": "autumn",
+        "dow": 1,
+        "date": "2026-10-05T10:00:00",
+        "expected": "色づきはじめの月曜日、今日のあなたも素敵な色をしています",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "1",
+          "season": "autumn",
+          "text": "色づきはじめの月曜日、今日のあなたも素敵な色をしています",
+          "label": "今日のひとこと",
+          "meta": "月曜日・秋"
+        },
+        "ok": true
+      },
+      {
+        "season": "autumn",
+        "dow": 2,
+        "date": "2026-10-06T10:00:00",
+        "expected": "澄んだ秋空の火曜日、ふっと肩の力が抜けますように",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "2",
+          "season": "autumn",
+          "text": "澄んだ秋空の火曜日、ふっと肩の力が抜けますように",
+          "label": "今日のひとこと",
+          "meta": "火曜日・秋"
+        },
+        "ok": true
+      },
+      {
+        "season": "autumn",
+        "dow": 3,
+        "date": "2026-10-07T10:00:00",
+        "expected": "落ち葉が舞う水曜日、立ち止まっても大丈夫",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "3",
+          "season": "autumn",
+          "text": "落ち葉が舞う水曜日、立ち止まっても大丈夫",
+          "label": "今日のひとこと",
+          "meta": "水曜日・秋"
+        },
+        "ok": true
+      },
+      {
+        "season": "autumn",
+        "dow": 4,
+        "date": "2026-10-08T10:00:00",
+        "expected": "実りの木曜日、ここまでの自分を少し褒めてみませんか",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "4",
+          "season": "autumn",
+          "text": "実りの木曜日、ここまでの自分を少し褒めてみませんか",
+          "label": "今日のひとこと",
+          "meta": "木曜日・秋"
+        },
+        "ok": true
+      },
+      {
+        "season": "autumn",
+        "dow": 5,
+        "date": "2026-10-09T10:00:00",
+        "expected": "夕暮れが早い金曜日、今週もよく歩いてきましたね",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "5",
+          "season": "autumn",
+          "text": "夕暮れが早い金曜日、今週もよく歩いてきましたね",
+          "label": "今日のひとこと",
+          "meta": "金曜日・秋"
+        },
+        "ok": true
+      },
+      {
+        "season": "autumn",
+        "dow": 6,
+        "date": "2026-10-10T10:00:00",
+        "expected": "読書の似合う土曜日、自分だけの静けさを味わって",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "6",
+          "season": "autumn",
+          "text": "読書の似合う土曜日、自分だけの静けさを味わって",
+          "label": "今日のひとこと",
+          "meta": "土曜日・秋"
+        },
+        "ok": true
+      },
+      {
+        "season": "winter",
+        "dow": 0,
+        "date": "2026-01-04T10:00:00",
+        "expected": "冬の日曜日、温かい飲み物と一緒にゆるりと過ごせますように",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "0",
+          "season": "winter",
+          "text": "冬の日曜日、温かい飲み物と一緒にゆるりと過ごせますように",
+          "label": "今日のひとこと",
+          "meta": "日曜日・冬"
+        },
+        "ok": true
+      },
+      {
+        "season": "winter",
+        "dow": 1,
+        "date": "2026-01-05T10:00:00",
+        "expected": "凛とした月曜日、まずは手を温めるところから始めましょう",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "1",
+          "season": "winter",
+          "text": "凛とした月曜日、まずは手を温めるところから始めましょう",
+          "label": "今日のひとこと",
+          "meta": "月曜日・冬"
+        },
+        "ok": true
+      },
+      {
+        "season": "winter",
+        "dow": 2,
+        "date": "2026-01-06T10:00:00",
+        "expected": "冬晴れの火曜日、深呼吸して、今日の自分に挨拶を",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "2",
+          "season": "winter",
+          "text": "冬晴れの火曜日、深呼吸して、今日の自分に挨拶を",
+          "label": "今日のひとこと",
+          "meta": "火曜日・冬"
+        },
+        "ok": true
+      },
+      {
+        "season": "winter",
+        "dow": 3,
+        "date": "2026-01-07T10:00:00",
+        "expected": "雪のようにそっと、自分の心にやさしくふれてみる一日",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "3",
+          "season": "winter",
+          "text": "雪のようにそっと、自分の心にやさしくふれてみる一日",
+          "label": "今日のひとこと",
+          "meta": "水曜日・冬"
+        },
+        "ok": true
+      },
+      {
+        "season": "winter",
+        "dow": 4,
+        "date": "2026-01-08T10:00:00",
+        "expected": "灯火のような木曜日、小さな安心をたいせつに",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "4",
+          "season": "winter",
+          "text": "灯火のような木曜日、小さな安心をたいせつに",
+          "label": "今日のひとこと",
+          "meta": "木曜日・冬"
+        },
+        "ok": true
+      },
+      {
+        "season": "winter",
+        "dow": 5,
+        "date": "2026-01-09T10:00:00",
+        "expected": "あと一日、自分に『おつかれ』と言ってあげて",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "5",
+          "season": "winter",
+          "text": "あと一日、自分に『おつかれ』と言ってあげて",
+          "label": "今日のひとこと",
+          "meta": "金曜日・冬"
+        },
+        "ok": true
+      },
+      {
+        "season": "winter",
+        "dow": 6,
+        "date": "2026-01-10T10:00:00",
+        "expected": "毛布のような土曜日、心も体もそっとくるんであげましょう",
+        "actual": {
+          "exists": true,
+          "visible": true,
+          "weekday": "6",
+          "season": "winter",
+          "text": "毛布のような土曜日、心も体もそっとくるんであげましょう",
+          "label": "今日のひとこと",
+          "meta": "土曜日・冬"
+        },
+        "ok": true
+      }
+    ]
+  },
+  "tc4": {
+    "clicked": true,
+    "initial": {
+      "exists": true,
+      "visible": true,
+      "weekday": "1",
+      "season": "spring",
+      "text": "新しい一週間、まずは深呼吸から",
+      "label": "今日のひとこと",
+      "meta": "月曜日・春"
+    },
+    "afterReset": {
+      "exists": true,
+      "visible": true,
+      "weekday": "1",
+      "season": "spring",
+      "text": "新しい一週間、まずは深呼吸から",
+      "label": "今日のひとこと",
+      "meta": "月曜日・春"
+    },
+    "welcome": {
+      "exists": true,
+      "visible": true,
+      "text": "AIカウンセラーこんにちは！「こころの相談室」へようこそ。\n\n私はあなたの悩みに寄り添うAIカウンセラーです。\n仕事、人間関係、健康、日常生活など、どんなことでもお気軽にご相談ください。\n\n【使い方のヒント】\n・下のカテゴリを選ぶと、より的確なアドバイスが受けられます\n・テキスト欄にお悩みを入力して「送信する」を押してください\n・続けて質問すると、会話の流れを踏まえて回答します\n・AI回答の下の絵文字で今の気持ちを記録できます\n・新しい話題で相談したいときは「新しい相談を始める」を押してください"
+    }
+  },
+  "tc5": {
+    "resumed": true,
+    "after": {
+      "exists": false
+    },
+    "welcome": {
+      "exists": false
+    },
+    "userMsgCount": 1
+  },
+  "tc6": {
+    "themes": [
+      {
+        "theme": "default",
+        "visible": true,
+        "w": 908,
+        "h": 97.21875,
+        "info": {
+          "exists": true,
+          "visible": true,
+          "weekday": "1",
+          "season": "spring",
+          "text": "新しい一週間、まずは深呼吸から",
+          "label": "今日のひとこと",
+          "meta": "月曜日・春"
+        }
+      },
+      {
+        "theme": "ocean",
+        "visible": true,
+        "w": 908,
+        "h": 97.21875,
+        "info": {
+          "exists": true,
+          "visible": true,
+          "weekday": "1",
+          "season": "spring",
+          "text": "新しい一週間、まずは深呼吸から",
+          "label": "今日のひとこと",
+          "meta": "月曜日・春"
+        }
+      },
+      {
+        "theme": "forest",
+        "visible": true,
+        "w": 908,
+        "h": 97.21875,
+        "info": {
+          "exists": true,
+          "visible": true,
+          "weekday": "1",
+          "season": "spring",
+          "text": "新しい一週間、まずは深呼吸から",
+          "label": "今日のひとこと",
+          "meta": "月曜日・春"
+        }
+      },
+      {
+        "theme": "night",
+        "visible": true,
+        "w": 908,
+        "h": 97.21875,
+        "info": {
+          "exists": true,
+          "visible": true,
+          "weekday": "1",
+          "season": "spring",
+          "text": "新しい一週間、まずは深呼吸から",
+          "label": "今日のひとこと",
+          "meta": "月曜日・春"
+        }
+      },
+      {
+        "theme": "sakura",
+        "visible": true,
+        "w": 908,
+        "h": 97.21875,
+        "info": {
+          "exists": true,
+          "visible": true,
+          "weekday": "1",
+          "season": "spring",
+          "text": "新しい一週間、まずは深呼吸から",
+          "label": "今日のひとこと",
+          "meta": "月曜日・春"
+        }
+      }
+    ]
+  },
+  "tc7": {
+    "totalStrings": 28,
+    "offenders": [],
+    "bucketed": {
+      "spring": [
+        "やわらかな春の日曜日、心ものんびり緩めていきましょう",
+        "新しい一週間、まずは深呼吸から",
+        "芽吹きの火曜日、小さな一歩がきっと花になります",
+        "春風が背中を押してくれる水曜日、ゆっくり進んでいきましょう",
+        "うららかな木曜日、できたことを少し数えてみませんか",
+        "週末まであと少し、春の光に身を委ねるように",
+        "桜のような土曜日、自分にやさしい時間を過ごせますように"
+      ],
+      "summer": [
+        "夏の日曜日、木陰のような穏やかな時間を大切に",
+        "暑い月曜日、無理せずひとつだけ動いてみる、それで十分",
+        "そよ風の火曜日、自分のペースで進んでいけますように",
+        "真夏の水曜日、水分と休憩も大切な仕事のひとつ",
+        "夕立のあとの空のように、今日もどこかに澄んだ瞬間がありますように",
+        "風鈴が鳴る金曜日、頑張った自分にそっと拍手を",
+        "蝉時雨の土曜日、心の声にも耳をすませる一日に"
+      ],
+      "autumn": [
+        "秋の日曜日、ゆっくり淹れたお茶のような静かな時間を",
+        "色づきはじめの月曜日、今日のあなたも素敵な色をしています",
+        "澄んだ秋空の火曜日、ふっと肩の力が抜けますように",
+        "落ち葉が舞う水曜日、立ち止まっても大丈夫",
+        "実りの木曜日、ここまでの自分を少し褒めてみませんか",
+        "夕暮れが早い金曜日、今週もよく歩いてきましたね",
+        "読書の似合う土曜日、自分だけの静けさを味わって"
+      ],
+      "winter": [
+        "冬の日曜日、温かい飲み物と一緒にゆるりと過ごせますように",
+        "凛とした月曜日、まずは手を温めるところから始めましょう",
+        "冬晴れの火曜日、深呼吸して、今日の自分に挨拶を",
+        "雪のようにそっと、自分の心にやさしくふれてみる一日",
+        "灯火のような木曜日、小さな安心をたいせつに",
+        "あと一日、自分に『おつかれ』と言ってあげて",
+        "毛布のような土曜日、心も体もそっとくるんであげましょう"
+      ]
+    },
+    "uniqueCount": 28
+  },
+  "tc8": {
+    "dailyReqsCount": 2,
+    "dailyReqs": [
+      "http://localhost:3000/js/dailyMessage.js",
+      "http://localhost:3000/js/data/dailyMessages.js"
+    ],
+    "info": {
+      "exists": true,
+      "visible": true,
+      "weekday": "1",
+      "season": "spring",
+      "text": "新しい一週間、まずは深呼吸から",
+      "label": "今日のひとこと",
+      "meta": "月曜日・春"
+    }
+  },
+  "tc9": {
+    "inputDisabledDuringStreaming": true,
+    "aiCount": 1,
+    "aiTextLen": 327,
+    "aiTextSample": "AIカウンセラーお仕事のことで心が落ち着かない状況、とてもお辛いですね。そのお気持ち、よく分かります。\n\n仕事の悩みは日々の生活に大きく影響するものですから、不",
+    "inputEnabledAfter": true,
+    "emojiSelectorCount": 1,
+    "emojiClicked": true,
+    "activeButtonCount": 1,
+    "summaryVisible": true,
+    "historyLinkVisible": true,
+    "historyPageOk": true
+  }
+}

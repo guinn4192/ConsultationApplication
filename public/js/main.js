@@ -27,6 +27,7 @@ import {
   addMessage,
   addStreamingMessage,
   markStreamingDone,
+  showDailyMessage,
 } from "./ui/chat.js";
 import { initEmotionSelector } from "./ui/emotion.js";
 import { initSummary, open as openSummary } from "./ui/summary.js";
@@ -80,6 +81,8 @@ document.addEventListener("DOMContentLoaded", () => {
       refreshHeaderUser();
       // オンボ直後は resumable を問わず通常フローへ（SPEC F21 初回訪問時はモーダル表示しない）
       navigate(ROUTES.ROOT);
+      // Sprint 8 / F22: ウェルカムの直前に「今日のひとこと」を併置（§4.6.3 #2）
+      showDailyMessage();
       showWelcomeMessage();
     },
   });
@@ -87,12 +90,16 @@ document.addEventListener("DOMContentLoaded", () => {
   initResume(resumeModal, {
     onResume: () => {
       // 再開完了後: 相談画面表示
+      // Sprint 8 / F22: ここでは showDailyMessage() を呼ばない（§4.6.1 / §4.6.3 #5）。
+      // 過去メッセージ復元の文脈を割らないため、再開フローでは「今日のひとこと」は出さない。
       navigate(ROUTES.ROOT);
       updateNewConsultationButton();
     },
     onFreshStart: () => {
       navigate(ROUTES.ROOT);
       clearMessages();
+      // Sprint 8 / F22: ウェルカムの直前に「今日のひとこと」を併置（§4.6.3 #3）
+      showDailyMessage();
       showWelcomeMessage();
       resetModeAndCategoryUi();
       updateNewConsultationButton();
@@ -259,6 +266,8 @@ document.addEventListener("DOMContentLoaded", () => {
       navigate(ROUTES.ROOT);
     }
     startRouter();
+    // Sprint 8 / F22: ウェルカムの直前に「今日のひとこと」を併置（§4.6.3 #1）
+    showDailyMessage();
     showWelcomeMessage();
   }
 
@@ -279,6 +288,8 @@ document.addEventListener("DOMContentLoaded", () => {
     state.resetSession();
     resetModeAndCategoryUi();
     clearMessages();
+    // Sprint 8 / F22: ウェルカムの直前に「今日のひとこと」を併置（§4.6.3 #4）
+    showDailyMessage();
     showWelcomeMessage();
     updateNewConsultationButton();
     updateCharCount();

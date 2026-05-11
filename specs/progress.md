@@ -617,3 +617,85 @@ DESIGN.md 参照章: §1.1 / §1.6 / §2.3 / §4.2-4.5 / §5.1-5.2 / §6.2-6.6 /
 - サーバ起動スモーク（`npm start` → `DB initialized:` + `Server running at http://localhost:3000`）、主要 API（`POST /api/user/register` / `POST /api/sessions` / `GET /resumable` / `POST /:id/close` の冪等性）を curl で実測確認
 - 仕様書にない機能追加なし（Feature 18/19/20/21 のみ、Sprint 6 以前の回帰は保持）
 - **S ではない理由**: better-sqlite3 が Evaluator 環境で成功するかは未確認（設計上フォールバックが働くが Windows 依存の動作差分が残り得る）、履歴画面のページネーション等のリッチ化は未対応
+
+---
+
+## Sprint 8 自己評価
+
+### 実装した機能
+- **Feature 22: 日替わりの一言メッセージ（今日のひとこと）**:
+  - 新規 `public/js/data/dailyMessages.js`: 28 パターン（春・夏・秋・冬 × 日〜土）の辞書 + `WEEKDAY_LABELS` / `SEASON_LABELS` / `DEFAULT_MESSAGE` を ES Module で export。先頭に `Date.getDay()` 順インデックス規約（0=Sun..6=Sat）コメント必須記載（R10 対策）。
+  - 新規 `public/js/dailyMessage.js`: 純粋関数 3 つ（`getSeason(date)` / `getWeekdayIndex(date)` / `getDailyMessage(date = new Date())`）。外部状態を参照しない決定的実装。Date 注入対応（Evaluator が `page.clock.install()` で固定可能）。辞書欠損時は `DEFAULT_MESSAGE` フォールバック。
+  - 拡張 `public/js/ui/chat.js`: 既存関数（`showWelcomeMessage` / `addMessage` / `clearMessages` 等）は一切変更せず、`showDailyMessage(date?)` と `removeDailyMessage()` を**追加 export のみ**。冪等性のため `showDailyMessage()` 先頭で `removeDailyMessage()` を呼ぶ。
+  - 拡張 `public/js/main.js`: `showDailyMessage` を import 追加。`showWelcomeMessage()` 既存 4 箇所すべての**直前**に `showDailyMessage()` を併置（§4.6.3 #1〜#4）。再開モーダル `onResume` には**追加しない**（§4.6.3 #5 / 過去メッセージ復元の文脈を割らないため。コメントで意図を明記）。
+  - 拡張 `public/style.css`: `.daily-message` / `.daily-message-label` / `.daily-message-meta` / `.daily-message-text` を追加。既存テーマ変数（`--color-ai-bubble` / `--color-ink-faint` / `--color-accent` / `--color-text` / `--font-script`）のみ使用、新規 CSS 変数は一切追加していない。モバイル向け `@media (max-width: 480px)` 追従。
+  - DOM 構造: `<div class="daily-message" data-daily-message data-weekday="N" data-season="..."> <span class="daily-message-label">今日のひとこと</span> <span class="daily-message-meta">月曜日・春</span> <span class="daily-message-text">...</span> </div>` を §8.3 DOM ガイドラインに完全準拠。
+
+### 受け入れ基準の達成状況
+
+| SPEC F22 受け入れ基準 | 状態 | 備考 |
+|---|---|---|
+| チャット画面初期表示時にウェルカムと並んで「今日のひとこと」要素が DOM に存在 | ✅ | bootstrap 末尾の §4.6.3 #1 で showDailyMessage → showWelcomeMessage の順に append |
+| その日の曜日・季節に対応した日本語メッセージが表示される | ✅ | `MESSAGES[season][weekdayIndex]` で 28 文言から決定。`data-weekday` / `data-season` 属性で値も検証可能 |
+| Date 固定下で対応するメッセージが表示される（曜日・季節を変えると別文言） | ✅ | `getDailyMessage(date = new Date())` の Date 注入対応。Node ローカルテストで 28 ケース網羅実測（後述） |
+| 同じ日付で複数回リロードしても同一メッセージ（決定的） | ✅ | 乱数・タイムスタンプ不使用。テストで「同日中の異なる時刻 2 回」が同一文言であることを確認済み |
+| 「新しい相談を始める」リセット後にウェルカム + 今日のひとことが再表示 | ✅ | `performReset()` 内の §4.6.3 #4 に showDailyMessage を追加。`clearMessages()` で全消去後に再 append |
+| 文言は前向き・優しい・押しつけがましくない（命令調・否定表現なし） | ✅ | 28 文言を「しなさい / するな / してはいけない / だめ / ダメ / 禁止」キーワード除外チェック済。すべて「〜ましょう」「〜ますように」等の柔らかい誘い形 |
+| サーバ停止状態でも表示される（専用リクエストなし） | ✅ | ES Module 内 const オブジェクト方式。`fetch` 一切なし。サーバ通信ゼロ |
+| 全テーマで表示崩れなし | ✅（CSS 設計上） | 既存テーマ変数のみで構成。default / ocean / forest / night / sakura のすべてが `--color-ai-bubble` / `--color-accent` / `--color-text` / `--color-ink-faint` を持つことを style.css 1-110 行で確認済。Evaluator が Playwright でスクショ確認予定 |
+| 既存ウェルカムメッセージ（Feature 7）が破壊されていない | ✅ | `showWelcomeMessage()` 関数本体は完全に未変更。chat.js diff は追加 import 1 行 + 末尾の新規 export ブロックのみ |
+| Evaluator が Playwright で月曜春 → リロード → 金曜冬の検証シナリオを再現可能 | ✅ | `data-daily-message` / `data-weekday` / `data-season` 属性をすべて付与。`page.clock.install()` で Date 固定可能なよう純粋関数化済 |
+
+### DESIGN.md との整合
+
+- **採用技術が DESIGN.md の選定通りか**: ✅ 完全準拠
+  - §1.7 (A) ES Module 内 const オブジェクト辞書 → 採用
+  - §1.7 (A) 曜日 × 季節の 2D テーブル算出 → 採用
+  - §1.7 日本一般区分の季節境界（春=2,3,4 / 夏=5,6,7 / 秋=8,9,10 / 冬=11,0,1）→ 採用
+  - §1.7 `Date.getDay()` インデックス規約（0=Sun..6=Sat）→ 採用、辞書ファイル先頭コメント必須化済
+- **処理方針の遵守状況**:
+  - §7.8.1 純粋関数化と Date 注入 → 全 3 関数が引数 Date のみで決定（外部状態参照なし）
+  - §7.8.2 決定性 / 冪等性 → 乱数・タイムスタンプ不使用。`showDailyMessage()` 先頭で `removeDailyMessage()` を呼んで冪等化
+  - §7.8.3 エラーハンドリング → `DEFAULT_MESSAGE` フォールバック実装。`chatMessagesEl` 未取得時は `console.warn` のみで黙って中断（既存非破壊優先）
+  - §7.8.4 タイムゾーン → クライアントローカルを受容。サーバ時刻・UTC 変換なし
+  - §7.8.5 既存機能との関係 → `showWelcomeMessage` 既存関数のシグネチャ・本体は完全に未変更。追加 export のみで対応
+  - §7.8.6 CSS 方針 → 既存テーマ変数のみ使用、新規 CSS 変数を一切追加していない
+  - §4.6.3 呼び出し点マトリクス → #1〜#4 すべてに showDailyMessage を直前併置、#5（onResume）には追加しない（コメントで意図明記）
+- **設計逸脱**: なし
+
+### 技術的判断
+
+- **CSS の左ボーダー + 🌿 絵文字アクセント**: §7.8.6 で「左ボーダーまたは小さなアイコン的装飾でアクセント」と Generator 判断に委ねられていた部分。`border-left: 3px solid var(--color-accent)` + label 先頭に `🌿` を疑似要素で配置することで、ウェルカム（`.message-welcome` = AI バブル相当）と視覚的に差別化しつつ、すべてのテーマで `--color-accent` が切り替わるため自然に馴染む構造とした。
+- **`scrollToBottom()` を呼ばない**: 「今日のひとこと」は画面冒頭に表示される要素であり、ここで `scrollToBottom()` を呼ぶとウェルカム以降の追加メッセージで自然に下スクロールされる挙動を妨げるため意図的に呼んでいない。`showWelcomeMessage()` が末尾で呼ぶ `scrollToBottom()` でカバーされる。
+- **`role="note"` + `aria-label`**: アクセシビリティ向上のため。Evaluator の網羅検証では `[data-daily-message]` セレクタ単独で十分だが、SR 利用者向けに「今日のひとこと（月曜日・春）」と読み上げられるよう meta 情報を `aria-label` に集約。
+- **辞書文言の作成方針**: SPEC F22 例示「月曜春『新しい一週間、まずは深呼吸から』」「金曜冬『あと一日、自分に『おつかれ』と言ってあげて』」は所定文言として固定。残り 26 を、季節感（春=芽吹き・桜・春風 / 夏=木陰・風鈴・蝉 / 秋=色づき・落ち葉・読書 / 冬=温かい飲み物・毛布・雪）と曜日感（日=ゆったり / 月=スタート / 火=芽 / 水=折り返し / 木=実り・小休憩 / 金=週末前 / 土=自分時間）の交差で構成。全 28 がユニーク（Node テストで Set サイズ 28 を確認済）。
+- **ローカルテスト**: `node` の ESM モジュール解決を `.mjs` 化して通し、9 種類の季節境界 + 月曜春・金曜冬の exact 文言 + 同日 2 回呼び出しの一致 + 28 文言ユニーク性 + 命令調/否定キーワード排除 + 28 ケース網羅すべてが PASS することを実測確認済。
+
+### 既知の問題
+
+- **ブラウザ実 E2E 未実施**: Generator 側ではコードレベル検証（構文チェック + Node 純粋関数テスト 28 ケース + 既存 main.js 4 呼び出し点 Grep 確認）まで完了。Playwright での `page.clock.install()` 経由テストおよび全テーマ切替時のスクショ確認は Evaluator 担当。
+- **絵文字 🌿 のフォント依存**: `.daily-message-label::before` で `🌿` を使用しているが、稀に古い OS で表示が崩れる可能性あり。落ちても文言とラベル本体は表示されるため致命ではない。
+- **アニメーション未実装**: 表示時のフェードイン等は実装していない（SPEC「即時に描画される」を尊重）。
+
+### 次スプリントへの申し送り
+
+- Sprint 8 で追加した DOM 識別属性:
+  - `[data-daily-message]`: ルート要素特定セレクタ
+  - `[data-weekday="N"]`: N は 0..6 で `Date.getDay()` 順
+  - `[data-season="..."]`: spring / summer / autumn / winter
+- 28 文言の固定（例: 月曜春 = `"新しい一週間、まずは深呼吸から"` / 金曜冬 = `"あと一日、自分に『おつかれ』と言ってあげて"`）。文言を変更する場合は dailyMessages.js のみ変更で済む（純粋関数依存）。
+- 呼び出し点 4 箇所:
+  - `bootstrap()` 末尾の `showWelcomeMessage()` 直前
+  - `initOnboarding({ onComplete })` 内の `showWelcomeMessage()` 直前
+  - `initResume({ onFreshStart })` 内の `showWelcomeMessage()` 直前
+  - `performReset()` 内の `showWelcomeMessage()` 直前
+- 「再開モーダル『続きから』」（`onResume`）には**意図的に追加していない**ことを Evaluator は確認可（main.js 行 93 のコメント参照）。
+- サーバ・DB・API 変更なし。`/api` 系エンドポイント・テーブル・スキーマすべて Sprint 7 のままで F22 を成立させている。
+
+### 総合自己評価: **A**
+- SPEC F22 の受け入れ基準 10 項目すべてを実装レベルで達成
+- DESIGN.md §1.7 / §2.3 / §4.6 / §7.8 / §8.3 / §9 R10/R11 / 付録 C をすべて遵守
+- 設計逸脱ゼロ、勝手な機能追加なし、サーバ・DB・API 変更なし
+- 既存 Sprint 1-7 機能（特にウェルカム表示・ストリーミング・再開モーダル・performReset）への影響なし（追加 import + 既存 4 呼び出し点の直前併置のみ）
+- 純粋関数 28 ケース網羅 + 文言ユニーク性 + トーンキーワード排除を Node でローカル実測済
+- **S ではない理由**: ブラウザでの実 E2E スクショ確認（全テーマ崩れなし）と `page.clock.install()` 経由の Playwright 検証は Evaluator 領域のため未実施。また辞書文言の「優しさ・押しつけがましくなさ」は機械的キーワード排除しかできておらず、最終的なトーン妥当性は Evaluator + 人手レビューで担保される

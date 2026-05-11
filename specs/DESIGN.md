@@ -1,13 +1,23 @@
-# こころの相談室 詳細設計書（Sprint 6 / Sprint 7）
+# こころの相談室 詳細設計書（Sprint 6 / Sprint 7 / Sprint 8）
 
-**バージョン**: v1.1（Feature 21 差分追記）
-**作成日**: 2026-04-21（v1.0） / 2026-04-21（v1.1 更新）
-**対応SPEC**: `specs/SPEC.md`（Feature 14–16, 18–21 / Sprint 6・Sprint 7）
+**バージョン**: v1.2（Sprint 8 / Feature 22 差分追記）
+**作成日**: 2026-04-21（v1.0） / 2026-04-21（v1.1 更新） / 2026-05-11（v1.2 更新）
+**対応SPEC**: `specs/SPEC.md`（Feature 14–16, 18–22 / Sprint 6・Sprint 7・Sprint 8）
 **前提スプリント**: Sprint 1–5 実装完了（`specs/progress.md` 参照）
 
-本書は Planner が合意した骨子（`C:\Users\takut\.claude\plans\ok-golden-starfish.md` 末尾「Designer 骨子提示（2026-04-21）」）に基づき、Sprint 6（感情トラッカー）および Sprint 7（匿名ユーザー識別 + DB 永続化 + 履歴閲覧 + 会話再開）の詳細設計を定義する。
+本書は Planner が合意した骨子（`C:\Users\takut\.claude\plans\ok-golden-starfish.md` 末尾「Designer 骨子提示（2026-04-21）」）に基づき、Sprint 6（感情トラッカー）および Sprint 7（匿名ユーザー識別 + DB 永続化 + 履歴閲覧 + 会話再開）の詳細設計を定義する。v1.2 で Sprint 8（日替わりの一言メッセージ）を追補した。
 
 **v1.1 更新内容**: Sprint 7 に Feature 21（中断した会話の再開プロンプト）を追加。影響章は §3 ユースケース図・§4.5（新規シーケンス）・§5（再開判定クエリ）・§6（新規エンドポイント `GET /api/sessions/resumable` および close 冪等化）・§7.6（新規・再開時の整合性）・§8.2（Sprint 7 実装ガイド）・§9（R8 / R9 追加）・§10（スコープ外 11-13 追加）・付録 A / B。
+
+**v1.2 更新内容**: Sprint 8 / Feature 22（日替わりの一言メッセージ）を追加。既存 §1〜§10 および付録 A / B は**一切改変せず**、本書末尾に以下を追補した:
+- §1.7 日替わりメッセージの技術選定（辞書格納方式・算出方式・表示位置の 3 軸比較）
+- §2.3 ディレクトリ構成への追記（`public/js/dailyMessage.js`, `public/js/data/dailyMessages.js`）
+- §4.6 日替わりメッセージ表示シーケンス（bootstrap 初期表示 / performReset の 2 本）
+- §7.8 日替わりメッセージの処理方針（DOM 構造・関数シグネチャ・呼び出し点正規化表・季節判定境界）
+- §8.3 Sprint 8 実装ガイド（Feature 22）
+- §9 リスク表に R10（曜日 off-by-one）/ R11（タイムゾーン依存）追加
+- §10 スコープ外に項目 14〜18 追加（時刻帯出し分け・多言語・カスタマイズ・お気に入り・管理 UI）
+- 付録 C: Sprint 8 受け入れ基準マッピングと Evaluator 検証手順サンプル
 
 ---
 
@@ -102,6 +112,43 @@ src/db/
 | SQLite ドライバ | better-sqlite3 ^11 | 同期 API で `server.js` の既存構造（async 不要なレポジトリ）を崩さず導入できる。WAL・プリペアードステートメント対応。 |
 
 UUID / ルーティング / モジュール化は依存ゼロで実装する。
+
+---
+
+### 1.7 日替わりメッセージの辞書格納方式と日付算出方式（Sprint 8 / Feature 22 導入）
+
+**辞書格納方式の比較**
+
+| 候補 | 概要 | 採否 | 理由 |
+|------|------|------|------|
+| (A) ES Module 内 const オブジェクト | `public/js/data/dailyMessages.js` に `export const MESSAGES = { spring: [...7], summer: [...], ... }` を定義 | **採用** | サーバ通信不要・ビルド不要・即時参照。Sprint 7 の ESM 化済み構成にそのまま追加できる。Evaluator が DevTools で読み出しやすい |
+| (B) JSON ファイル + `fetch()` | `public/data/daily-messages.json` を起動時 `fetch` で読む | 不採用 | F22 非機能要件「サーバ通信を伴わない／オフラインでも動作」に反する余地（同一オリジンでも `file://` 系・サーバ停止時の挙動が不安定）。1KB 程度の辞書を非同期化する利点なし |
+| (C) DB へ移行 | `daily_messages` テーブルに格納 | 不採用 | F22 スコープ外「メッセージ文言の DB 保存・DB からの読み出し」に明示的に反する |
+
+**日付算出方式の比較**
+
+| 候補 | 概要 | 採否 | 理由 |
+|------|------|------|------|
+| (A) 曜日 × 季節の 2D テーブル | `MESSAGES[season][weekdayIndex]` で 28 パターン | **採用** | SPEC F22「曜日×季節で決まる、最低 28 パターン」を素直に表現。決定性・テスト容易性が高い |
+| (B) 日付ハッシュ + プール | `hash(YYYY-MM-DD) % N` でランダム選出 | 不採用 | SPEC「曜日と季節をそれぞれ変えると別のメッセージが表示される」を満たすには曜日と季節の独立性を保つ必要があり、ハッシュでは検証困難 |
+| (C) 通算日 % 28 | 一周 28 日のローテーション | 不採用 | 曜日・季節とメッセージの意味的対応がぶれる（月曜なのに金曜文言が出る等） |
+
+**季節境界**
+
+日本の一般的な区分を採用する:
+
+| 季節 | 月 | `Date.getMonth()` (0-11) |
+|------|-----|---|
+| 春 (spring) | 3〜5月 | 2, 3, 4 |
+| 夏 (summer) | 6〜8月 | 5, 6, 7 |
+| 秋 (autumn) | 9〜11月 | 8, 9, 10 |
+| 冬 (winter) | 12〜2月 | 11, 0, 1 |
+
+**曜日インデックス規約**
+
+JavaScript の `Date.getDay()` の戻り値（**0=日, 1=月, 2=火, 3=水, 4=木, 5=金, 6=土**）をそのまま配列インデックスに使う。`dailyMessages.js` ファイル先頭にこの規約をコメントで必ず記載すること（R10 オフバイワン回避）。
+
+**辞書サイズ**: 4 季節 × 7 曜日 = 28 パターン（SPEC 最低要件と一致）。各パターンは 30〜50 文字程度の日本語文言 1 本。
 
 ---
 
@@ -222,7 +269,7 @@ Sprint 7 では以下が追加される:
 - `public/js/router.js`, `public/js/ui/onboarding.js`, `public/js/ui/history.js`
 - `data/app.db` 自動生成（`.gitignore` 済）
 
-### 2.3 ディレクトリ構成（Sprint 7 完了時）
+### 2.3 ディレクトリ構成（Sprint 7 完了時 → Sprint 8 追加 ★印）
 
 ```
 ConsultationApplication/
@@ -245,14 +292,18 @@ ConsultationApplication/
 │       └── history.js         # GET /api/history, GET /api/history/:sessionId
 ├── public/
 │   ├── index.html             # type="module" 化 + onboarding/history 用コンテナ
-│   ├── style.css              # 絵文字セレクタ / サマリカード / オンボ / 履歴 スタイル追加
+│   ├── style.css              # 絵文字セレクタ / サマリカード / オンボ / 履歴 / ★日替わりメッセージ スタイル
 │   └── js/
-│       ├── main.js            # DOMContentLoaded エントリ
+│       ├── main.js            # DOMContentLoaded エントリ（★showDailyMessage 呼び出し追加）
 │       ├── router.js          # hash ベースルーティング
 │       ├── state.js           # 単一ソース state
 │       ├── api.js             # fetch ラッパ（x-user-uuid 自動付与）
+│       ├── dailyMessage.js    # ★Sprint 8 新規: 日付 → メッセージ算出（純粋関数）
+│       ├── data/
+│       │   └── dailyMessages.js  # ★Sprint 8 新規: 28 パターンの辞書 + ラベル定数
 │       ├── ui/
 │       │   ├── chat.js        # addMessage / addStreamingMessage / scrollToBottom
+│       │   │                  #   ★Sprint 8: showDailyMessage / removeDailyMessage を追加 export
 │       │   ├── emotion.js     # 5絵文字セレクタ + click/hover
 │       │   ├── summary.js     # 本日の変化サマリカード
 │       │   ├── onboarding.js  # 初回画面（Sprint 7）
@@ -267,6 +318,8 @@ ConsultationApplication/
 ```
 
 既存 `public/app.js` は Sprint 6 の移行完了をもって削除する（分割完了後、`index.html` からの参照も削除）。
+
+Sprint 8 追加分（★印）は新規ファイル 2 個（`dailyMessage.js`, `data/dailyMessages.js`）と既存 3 ファイル（`main.js`, `ui/chat.js`, `style.css`）への追記のみ。サーバ側ファイル（`server.js`, `src/db/*`, `src/routes/*`）は一切変更しない。
 
 ---
 
@@ -534,6 +587,78 @@ sequenceDiagram
    - 200 → 再開モーダル表示 → ユーザー選択で分岐
    - 204 → 通常の相談画面（#/）
 ```
+
+---
+
+### 4.6 日替わりの一言メッセージ（Sprint 8 / Feature 22）
+
+#### 4.6.1 bootstrap 初期表示（再開モーダル非該当ケース）
+
+```mermaid
+sequenceDiagram
+  actor U as User
+  participant M as main.js
+  participant API as api.js
+  participant DM as dailyMessage.js
+  participant DICT as data/dailyMessages.js
+  participant CH as ui/chat.js
+
+  U->>M: ページ読み込み (DOMContentLoaded)
+  M->>API: getUser(uuid) / getResumableSession()
+  alt 再開対象なし or オンボ完了直後 or performReset 直後
+    M->>DM: getDailyMessage(new Date())
+    DM->>DM: getSeason(date) / getWeekdayIndex(date)
+    DM->>DICT: MESSAGES[season][weekdayIndex]
+    DICT-->>DM: メッセージ文字列
+    DM-->>M: { message, weekdayLabel, seasonLabel, weekdayIndex, season }
+    M->>CH: showDailyMessage()
+    CH->>CH: removeDailyMessage()（冪等性）
+    CH->>CH: <div.daily-message> を chatMessagesEl に append
+    M->>CH: showWelcomeMessage()
+    CH-->>U: 「今日のひとこと」+ ウェルカムが並んで表示
+  else 再開モーダル「続きから」を選択
+    Note over M,CH: showDailyMessage() を呼ばない（既存メッセージあり）
+  end
+```
+
+**実装上のポイント**:
+- `showDailyMessage()` は呼び出し順として `showWelcomeMessage()` の**直前**に置く。これは DOM 上で「今日のひとこと」がウェルカムより上に並ぶことを意味する
+- `showDailyMessage()` 内部で `removeDailyMessage()` を最初に呼び、同一日に複数回呼ばれても重複描画しない（R10 / 冪等性）
+- 「再開モーダル『続きから』」のパスでは `showDailyMessage()` を呼ばない。これは SPEC「中断した会話の再開」の体験を壊さないため（既存メッセージの上にひとことを差し込むと文脈が割れる）
+
+#### 4.6.2 performReset → 再表示
+
+```mermaid
+sequenceDiagram
+  actor U as User
+  participant M as main.js
+  participant CH as ui/chat.js
+  participant DM as dailyMessage.js
+
+  U->>M: サマリカード「リセットして新しい相談を始める」
+  M->>M: performReset()
+  M->>CH: clearMessages()
+  Note over CH: chatMessagesEl.innerHTML = ""<br/>これにより .daily-message も消える
+  M->>DM: getDailyMessage(new Date())
+  DM-->>M: { message, ... }
+  M->>CH: showDailyMessage()
+  M->>CH: showWelcomeMessage()
+  CH-->>U: 「今日のひとこと」+ welcome 再表示
+```
+
+**実装上のポイント**:
+- `clearMessages()` は `chatMessagesEl.innerHTML = ""` で全消去するため、`.daily-message` も自動的に消える。明示的な `removeDailyMessage()` 呼び出しは不要（だが `showDailyMessage()` 内部で冪等化されているので二重呼び出しでも安全）
+- SPEC F22 受け入れ基準「『新しい相談を始める』ボタンによるリセット後、ウェルカムメッセージと『今日のひとこと』がともに再表示される」に対応
+
+#### 4.6.3 呼び出し点マトリクス
+
+| # | 呼び出し点 | `showWelcomeMessage` | `showDailyMessage`（直前に挿入） | 根拠 |
+|---|-----------|--------------------|--------------------------------|------|
+| 1 | `bootstrap()` 末尾（オンボ済 + 再開対象なし） | 既存あり | **追加** | チャット初期表示時の併置（SPEC F22） |
+| 2 | オンボーディング `onComplete` 後 | 既存あり | **追加** | 初回利用直後も即時表示 |
+| 3 | 再開モーダル `onFreshStart` 後 | 既存あり | **追加** | 「新しく始める」選択は実質的に新規セッション開始 |
+| 4 | `performReset()` 内 | 既存あり | **追加** | SPEC F22「リセット後の再表示」明示 |
+| 5 | 再開モーダル `onResume` 後 | なし | **追加しない** | 過去メッセージ復元の文脈を割らない（4.6.1 参照） |
 
 ---
 
@@ -909,6 +1034,61 @@ app.use("/api/history", require("./src/routes/history"));
 
 orphan close の対象日境界は UTC 起点。サマータイム等の複雑性はスコープ外。
 
+### 7.8 日替わりメッセージの処理方針（Sprint 8 / Feature 22）
+
+#### 7.8.1 純粋関数化と Date 注入
+
+`dailyMessage.js` の主要関数は**全て純粋関数**として実装し、外部状態（current date, locale 等）を参照しない:
+
+```javascript
+// public/js/dailyMessage.js（実装イメージ。Generator が確定）
+import { MESSAGES, WEEKDAY_LABELS, SEASON_LABELS } from "./data/dailyMessages.js";
+
+export function getSeason(date) { /* month → "spring" | "summer" | "autumn" | "winter" */ }
+export function getWeekdayIndex(date) { return date.getDay(); } // 0=Sun..6=Sat
+export function getDailyMessage(date = new Date()) {
+  const season = getSeason(date);
+  const weekdayIndex = getWeekdayIndex(date);
+  return {
+    message: MESSAGES[season][weekdayIndex],
+    weekdayLabel: WEEKDAY_LABELS[weekdayIndex],
+    seasonLabel: SEASON_LABELS[season],
+    weekdayIndex,
+    season,
+  };
+}
+```
+
+**Date 注入の理由**: Evaluator が Playwright の `page.clock.install({ time: "2026-03-02T10:00:00" })` で日付を固定して曜日×季節の網羅検証を行えるようにする（SPEC F22 受け入れ基準「ブラウザの Date を…日付に固定した状態でアプリを開いたとき」を直接サポート）。
+
+#### 7.8.2 決定性 / 冪等性
+
+- 同一日内の複数回リロード・複数回呼び出しで**同一メッセージ**が返ることを保証する（SPEC F22 受け入れ基準）。乱数・タイムスタンプ等の非決定要素を一切使わない
+- `showDailyMessage()` は内部で先頭に `removeDailyMessage()` を呼び、何度呼んでも DOM 上は 1 要素のみ存在することを保証する
+
+#### 7.8.3 エラーハンドリング
+
+- `getDailyMessage()` は理論上 `MESSAGES[season][weekdayIndex]` が必ず存在するため例外を投げない。それでも防御的に「辞書欠損 → デフォルト文言『今日もおつかれさまです。』を返す」フォールバックを `dailyMessage.js` 内に持つ
+- 万一 DOM 操作で `chatMessagesEl` が未取得（id 変更等）の場合は `console.warn` のみで処理を黙って中断する。ウェルカム表示の阻害を絶対に起こさない（既存機能の非破壊優先）
+
+#### 7.8.4 タイムゾーン
+
+- `new Date()` および `Date.getDay()` / `Date.getMonth()` は**クライアント端末のローカルタイムゾーン**で評価される（JavaScript 標準動作）
+- これは「日本の利用者は日本時間で曜日・季節が決まる」「海外利用者はその端末の現地時間で決まる」という素直な挙動と一致する
+- サーバ時刻・UTC への変換は行わない（R11 で明示的に受容）
+
+#### 7.8.5 既存機能との関係
+
+- ウェルカムメッセージ（Feature 7）は**完全非破壊**。`chat.js` 内の `showWelcomeMessage()` 既存関数のシグネチャ・本体は一切変更しない
+- 新規 export として `showDailyMessage()` / `removeDailyMessage()` を `chat.js` に追加するのみ
+- main.js の既存呼び出し点 4 箇所に対し `showDailyMessage()` を **直前に追加** する形でのみ介入する。既存の呼び出し順や引数は変更しない
+
+#### 7.8.6 CSS 方針
+
+- 既存テーマ変数のみ使用: `var(--color-ai-bubble)`, `var(--color-ink-faint)`, `var(--color-accent)`, `var(--color-text)`, `var(--color-text-light)`
+- 新規 CSS 変数を一切追加しない（全テーマ default / ocean / forest / night / sakura で自動的に整合）
+- ラベル「今日のひとこと」を視覚的にウェルカムと区別するため、左ボーダーまたは小さなアイコン的装飾でアクセントを付ける（最終的なビジュアルは Generator 判断、ただし上記変数のみ使用）
+
 ---
 
 ## 8. Sprint 別 実装ガイド
@@ -1020,9 +1200,118 @@ Sprint 6 は SPEC で「本スプリントは、セッション内で完結す�
 
 ---
 
+### 8.3 Sprint 8: 日替わりの一言メッセージ（今日のひとこと）
+
+**対応 Feature**: F22
+
+**重点技術**:
+- ES Module 内 const オブジェクトによる辞書格納（`public/js/data/dailyMessages.js`）
+- 純粋関数による日付 → メッセージ算出（`public/js/dailyMessage.js`）
+- 既存 `ui/chat.js` への非破壊的 export 追加（`showDailyMessage` / `removeDailyMessage`）
+- `main.js` の既存 `showWelcomeMessage()` 呼び出し点 4 箇所への直前併置
+
+**新規ファイル**:
+
+```
+public/js/
+├── data/
+│   └── dailyMessages.js     ★新規（28 パターンの辞書 + ラベル定数）
+└── dailyMessage.js          ★新規（純粋関数: getDailyMessage / getSeason / getWeekdayIndex）
+```
+
+**既存ファイルへの変更**:
+
+| ファイル | 変更種別 | 内容 |
+|---------|---------|------|
+| `public/js/ui/chat.js` | 追記のみ（既存関数不変） | `showDailyMessage(date?)` / `removeDailyMessage()` を新規 export。既存の `showWelcomeMessage` / `addMessage` / `clearMessages` 等は一切触らない |
+| `public/js/main.js` | 追記のみ | `import { showDailyMessage } from "./ui/chat.js"` を追加。既存 `showWelcomeMessage()` 呼び出し 4 箇所の**直前**に `showDailyMessage()` を併置（再開モーダル `onResume` には追加しない） |
+| `public/style.css` | 追記のみ | `.daily-message` / `.daily-message-label` / `.daily-message-meta` / `.daily-message-text` セレクタを追加。既存テーマ変数のみ使用（§7.8.6） |
+
+**先行準備**:
+1. Sprint 7 完了状態（オンボーディング・DB 永続化・履歴閲覧・再開モーダルが動作）の確認
+2. `public/js/main.js` 内で `showWelcomeMessage()` を呼んでいる箇所 4 つを Grep で抽出し、リストアップしてから着手（漏れ防止）
+3. 既存テーマ 5 種類（default / ocean / forest / night / sakura）を切り替えて、新しい CSS の見え方をテーマ別に確認する手順を Evaluator に渡す
+
+**DOM 構造（実装ガイド）**:
+
+```html
+<div class="daily-message" data-daily-message data-weekday="1" data-season="spring">
+  <span class="daily-message-label">今日のひとこと</span>
+  <span class="daily-message-meta">月曜日・春</span>
+  <span class="daily-message-text">新しい一週間、まずは深呼吸から</span>
+</div>
+```
+
+- `data-daily-message` 属性は Evaluator の Playwright セレクタ用（`page.locator("[data-daily-message]")`）
+- `data-weekday` / `data-season` は曜日×季節網羅テストでの値検証用
+- ラベル「今日のひとこと」は固定文字列（多言語対応はスコープ外）
+
+**辞書ファイル仕様**（`public/js/data/dailyMessages.js`）:
+
+```javascript
+// public/js/data/dailyMessages.js
+// 曜日インデックス規約: Date.getDay() に従う
+//   0=Sun (日), 1=Mon (月), 2=Tue (火), 3=Wed (水),
+//   4=Thu (木), 5=Fri (金), 6=Sat (土)
+// 季節キー: "spring" | "summer" | "autumn" | "winter"
+
+export const MESSAGES = {
+  spring: [
+    "...（日曜・春）",  // index 0
+    "新しい一週間、まずは深呼吸から",  // index 1（月曜・春）
+    "...（火曜・春）",  // index 2
+    "...（水曜・春）",  // index 3
+    "...（木曜・春）",  // index 4
+    "...（金曜・春）",  // index 5
+    "...（土曜・春）",  // index 6
+  ],
+  summer: [ /* 7 entries */ ],
+  autumn: [ /* 7 entries */ ],
+  winter: [
+    /* ... */,
+    /* ... */,
+    /* ... */,
+    /* ... */,
+    /* ... */,
+    "あと一日、自分に『おつかれ』と言ってあげて",  // index 5（金曜・冬）
+    /* ... */,
+  ],
+};
+
+export const WEEKDAY_LABELS = ["日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日"];
+export const SEASON_LABELS = { spring: "春", summer: "夏", autumn: "秋", winter: "冬" };
+```
+
+**呼び出し点 4 箇所**（§4.6.3 参照）:
+
+| # | 呼び出し点 | 既存 `showWelcomeMessage` 行 | 追加する行 |
+|---|-----------|---------------------------|------------|
+| 1 | `bootstrap()` 末尾（オンボ済 + 再開なしの分岐） | `showWelcomeMessage()` | 直前に `showDailyMessage()` |
+| 2 | オンボーディング `onComplete` 後 | `showWelcomeMessage()` | 直前に `showDailyMessage()` |
+| 3 | 再開モーダル `onFreshStart` 後 | `showWelcomeMessage()` | 直前に `showDailyMessage()` |
+| 4 | `performReset()` 内 | `showWelcomeMessage()` | 直前に `showDailyMessage()` |
+| 5（追加しない） | 再開モーダル `onResume` 後 | （なし） | 追加しない（§4.6.1 参照） |
+
+**回帰テスト範囲**（Sprint 7 までの機能を破壊していないこと）:
+- オンボーディング → 相談画面遷移後、ウェルカムメッセージが従来通り表示される（その上に「今日のひとこと」が並ぶだけ）
+- 「新しい相談を始める」→ サマリカード → リセット後、ウェルカム + 今日のひとことが再表示される
+- 再開モーダル「続きから」選択後は過去メッセージが復元され、「今日のひとこと」は表示されない
+- DB 永続化（messages / emotion_records / sessions テーブル）に**一切の追加列を作らない**。Feature 22 は DB 非関与
+- 全テーマ切替で表示崩れなし
+
+**Generator 注意点**:
+- 辞書配列のインデックスは `[日, 月, 火, 水, 木, 金, 土]` の**`Date.getDay()` 順**で固定する。`[月, 火, ..., 日]` 順や `[日付の 1〜7]` 順にしない（R10）
+- `dailyMessages.js` ファイル冒頭のインデックス規約コメントは**必須**（実装時の自己保護コメント）
+- `showDailyMessage()` は内部で先頭に `removeDailyMessage()` を呼び、冪等性を保証する
+- すべての日付関連関数は引数で `Date` を受け取れるようにする（Evaluator が `page.clock.install()` で固定日付を注入するため）
+- 新規 API エンドポイント・DB スキーマ変更・サーバサイドのコード変更を**一切しない**（F22 スコープ外）
+- メッセージ文言は前向き・優しい・押しつけがましくないトーンで統一。命令調・否定表現を避ける（SPEC F22 受け入れ基準）
+
+---
+
 ## 9. 想定リスクと対策
 
-骨子で合意済みの R1〜R7 を拡張し、Feature 21 追加に伴い R8 / R9 を追補する。
+骨子で合意済みの R1〜R7 を拡張し、Feature 21 追加に伴い R8 / R9 を、Feature 22 追加に伴い R10 / R11 を追補する。
 
 | ID | リスク | 影響度 | 発生確率 | 対応 Sprint | 対策 |
 |----|--------|--------|----------|-------------|------|
@@ -1035,6 +1324,8 @@ Sprint 6 は SPEC で「本スプリントは、セッション内で完結す�
 | R7 | 気分トーン addendum がモード指示を「上書き」と誤認される | 中（Evaluator 混乱） | 中 | 6 | addendum 冒頭を「モードの指示を踏まえた上で」に固定。Evaluator シナリオに「モード=解決 × 気分=😢 → 解決プロセスの中で共感表現が増えることを確認」を追加 |
 | R8 | マルチタブで同時に「新しく始める」を押すと古いセッションを二重 close しようとする | 低（エラートースト誤表示） | 中 | 7 | `POST /api/sessions/:id/close` を**冪等化**: `WHERE id=? AND user_uuid=? AND closed_at IS NULL` で UPDATE し、`changes()===0` なら既存 `closed_at` を SELECT して `{alreadyClosed:true}` で 200 OK を返す。クライアントは `alreadyClosed` を受け取ってもエラー扱いしない |
 | R9 | 再開モーダル表示中に別タブで相談送信されると、復元データが古くなる | 低（表示直後に最新ではない内容が見える） | 低 | 7 | 「前回の続きから再開する」選択時点で**再度 `GET /api/sessions/resumable` を呼び直して最新化**してから描画する方針を採る（推奨）。実装負荷が重い場合は初回 GET の結果をそのまま使用しても可（その場合は本リスクを明示的に受容し、次送信時に DB 側の messages とマージ整合することで最終的な整合性を保つ） |
+| R10 | 曜日インデックスのオフバイワン（日曜=0 と 月曜=0 の混同） | 中（誤った曜日のメッセージが表示され、Evaluator 検証で曜日固定テストが落ちる） | 中 | 8 | `Date.getDay()` の規約（0=Sun..6=Sat）に従い、`dailyMessages.js` 先頭にインデックスコメントを必須化。`MESSAGES[season]` は固定 7 要素配列。Evaluator は 7 曜日 × 4 季節の網羅検証を行い、月曜=1 / 金曜=5 等の値検証も含める |
+| R11 | クライアントタイムゾーン依存（日付境界が利用者の現地時刻で決まる） | 低（日付をまたぐ深夜・海外利用時に挙動が地域差を持つ） | 低 | 8 | クライアントローカルタイムゾーンで日付・曜日・季節を判定することを §7.8.4 で**明示的に受容**。サーバ時刻・UTC への変換は行わない。本機能は「お守り的なメッセージ」であり厳密な日付境界制御は不要。Evaluator は `page.clock.install()` でローカル時刻を固定して検証 |
 
 ---
 
@@ -1068,6 +1359,14 @@ Sprint 6 は SPEC で「本スプリントは、セッション内で完結す�
     - 当日未 close セッションが複数存在する場合でも、最新 `started_at` 1 件のみを再開候補としてモーダルに提示する。それ以外はユーザーからは見えず、次回起動時までそのまま残る（「新しく始める」選択後に再度 `GET /resumable` すると次の候補が出る可能性はあるが、本スプリントでは一度に 1 件ずつ処理する UI のみ提供）
 13. **再開セッションでの過去発言の編集・削除**
     - Feature 21 の再開は**追記のみ**。復元表示された過去の user / assistant メッセージは読み取り専用で、編集・削除 UI は提供しない（SPEC スコープ外「過去の相談・気分記録の編集・削除機能」と整合）
+14. **時刻帯（朝／昼／夜）による日替わりメッセージ出し分け**（Feature 22 境界）
+    - SPEC F22 スコープ外で明示。本機能は曜日×季節の 2 軸のみで決定する。将来「朝のひとこと／夜のひとこと」を導入する場合は辞書を 3D（season × weekday × timeOfDay）に拡張する設計余地を残すのみで、本スプリントでは実装しない
+15. **日替わりメッセージの多言語対応**（Feature 22 境界）
+    - 全体スコープ外「多言語対応（日本語のみ）」に従う
+16. **ユーザーごとの日替わりメッセージカスタマイズ**（Feature 22 境界）
+    - 誰が開いても同じ日付なら同じ文言が出る設計を維持する。ユーザー別の好み学習やお気に入り、共有機能、管理 UI は SPEC F22 スコープ外
+17. **日替わりメッセージの DB 保存・サーバ側 API**（Feature 22 境界）
+    - クライアント完結を維持する。サーバ通信が発生しないことが「オフラインでも動作する」非機能要件の達成条件であり、これを破る設計は採用しない
 
 ---
 
@@ -1081,6 +1380,19 @@ Sprint 6 は SPEC で「本スプリントは、セッション内で完結す�
 | emotion.messageId | message.id と同じ文字列 | FK として参照 | 同上 |
 | lastEmotion | state に保持 → 送信時 body に詰める | 同じ経路（追加変更なし） | Sprint 6 からサーバ側が body 経由で受けるため Sprint 7 で再設計不要 |
 | 再開フロー（F21） | 該当なし（Sprint 6 はブラウザリロードで state 全損） | `GET /api/sessions/resumable` → モーダル → 状態復元 / 新規開始 | **Sprint 6 のクライアント構造から何も壊さない**。Sprint 6 の `state.sessionId` / `message.id` / `state.emotions[]` 形状・`addMessage()` / 絵文字セレクタ `.active` 付与のいずれもそのまま再利用。resume.js は新規ファイルとして追加するのみで、Sprint 6 の他モジュール（chat.js / emotion.js / summary.js / main.js のメッセージ送信フロー）は一切改変しない |
+
+### Sprint 7 → Sprint 8 互換マトリクス
+
+| データ / 機能 | Sprint 7 までの状態 | Sprint 8 での扱い | 互換の要点 |
+|--------------|--------------------|------------------|------------|
+| ウェルカムメッセージ表示（F7） | `chat.js` の `showWelcomeMessage()` を 4 箇所から呼ぶ | 既存関数を**完全に維持**。シグネチャも本体も変更しない | Feature 22 は併置のみ。回帰リスクを最小化 |
+| `chatMessagesEl` の DOM 構造 | `.welcome-message` 要素のみ存在 | `.daily-message` 要素が `.welcome-message` の直前に並ぶ | Evaluator は `[data-daily-message]` で独立に検出可能。既存セレクタは無効化されない |
+| `clearMessages()` | `chatMessagesEl.innerHTML = ""` | 同じ実装で `.daily-message` も自動的に消える | 追加処理不要。`performReset()` 後の `showDailyMessage()` 呼び出しで再描画される |
+| サーバ API | `/api/consult/stream`, `/api/sessions/*`, `/api/user/*`, `/api/messages/*`, `/api/emotions`, `/api/history/*` | **変更なし**。新規エンドポイントなし | F22 はクライアント完結 |
+| DB スキーマ | users / sessions / messages / emotion_records | **変更なし**。テーブル追加・列追加なし | F22 は DB 非関与 |
+| localStorage | `consultation_app_user_uuid` / `consultation_app_user_name` | **変更なし** | F22 は localStorage 非関与 |
+| 既存テーマ CSS（default / ocean / forest / night / sakura） | 既存テーマ変数（`--color-ai-bubble`, `--color-ink-faint`, `--color-accent`, `--color-text`, `--color-text-light`）が定義済み | 新しい `.daily-message` セレクタは**これらの既存変数のみ**を参照 | 新しい CSS 変数を追加しない → 全テーマ自動整合 |
+| 再開モーダル「続きから」復元 | 過去メッセージを DB から復元して表示 | `.daily-message` は表示しない（§4.6.1） | 復元体験を文脈的に壊さない |
 
 ## 付録 B: Evaluator 検証観点の追補
 
@@ -1103,3 +1415,104 @@ Sprint 7 Feature 21（再開プロンプト）追加観点:
 - 当日未 close セッションが存在しない状態（全 close 済 or 前日以前のみ）でリロード → モーダル表示されず通常通り相談画面到達
 - 初回訪問（localStorage 空）→ オンボーディング画面が優先され、`GET /resumable` は呼ばれない（Feature 21 SPEC 受け入れ基準）
 - `POST /api/sessions/:id/close` 冪等性確認: 同じセッションに対して 2 回連続で close 要求 → どちらも 200 OK（R8 対策）
+
+Sprint 8 Feature 22（日替わりの一言メッセージ）追加観点:
+- `page.clock.install({ time: "2026-03-02T10:00:00" })`（月曜・春）で固定 → アプリを開く → `[data-daily-message][data-weekday="1"][data-season="spring"]` が存在し、SPEC 例示「新しい一週間、まずは深呼吸から」相当のメッセージが表示される
+- 同じ日付でリロード → 同一文言が表示される（決定性 / R11 検証ではなく決定性確認）
+- `page.clock.install({ time: "2026-01-23T10:00:00" })`（金曜・冬）→ 別文言（SPEC 例示「あと一日、自分に『おつかれ』と言ってあげて」相当）が表示される
+- 4 季節 × 7 曜日 = 28 パターン網羅検証（R10 オフバイワン対策）
+- 「新しい相談を始める」→ サマリカード「リセットして新しい相談を始める」→ ウェルカム + `[data-daily-message]` の両方が再表示される
+- 再開モーダル「続きから」選択時は `[data-daily-message]` が表示されない（§4.6.1 / §4.6.3 #5）
+- DevTools ネットワークタブで「今日のひとこと」専用のサーバリクエストが**発生しない**ことを確認（クライアント完結 / SPEC F22 受け入れ基準）
+- 全テーマ（default / ocean / forest / night / sakura）切替で `.daily-message` のレイアウト崩れ・文字重なり・コントラスト不足がないことを目視確認
+- Feature 7（ウェルカムメッセージ）が引き続き表示される（既存機能の非破壊確認）
+- メッセージ文言検査: 28 パターンすべてに「ない」「やめろ」「だめ」等の否定・命令調表現が含まれないことを文字列検査で確認（SPEC F22 トーン要件）
+
+---
+
+## 付録 C: Sprint 8 受け入れ基準マッピングと Evaluator 検証手順サンプル
+
+### C.1 SPEC F22 受け入れ基準 → DESIGN.md 章マッピング
+
+| SPEC F22 受け入れ基準 | 担保する設計章 |
+|---------------------|---------------|
+| チャット画面の初期表示時に、ウェルカムメッセージと並んで／セットで「今日のひとこと」を含む要素が DOM に存在する | §4.6.1 / §4.6.3 #1〜#3 / §8.3 呼び出し点表 |
+| 「今日のひとこと」要素には、その日の曜日・季節に対応した日本語のメッセージ文言が表示されている | §1.7 算出方式 / §7.8.1 純粋関数 / §8.3 辞書ファイル仕様 |
+| ブラウザの Date を「ある曜日・ある季節」の日付に固定した状態でアプリを開いたとき、その曜日・季節に対応する所定のメッセージが表示される | §7.8.1 Date 注入 / 付録 B Sprint 8 観点 1〜3 |
+| 同じ日付（同じ曜日・季節）でページを複数回リロードしても、毎回同一のメッセージが表示される（決定的） | §7.8.2 決定性 / §1.7 算出方式 (A) 採用理由 |
+| 「新しい相談を始める」ボタンによるリセット後、ウェルカムメッセージと「今日のひとこと」がともに再表示される | §4.6.2 performReset → 再表示 / §4.6.3 #4 |
+| メッセージ文言は前向き・優しい・押しつけがましくないトーンで、ネガティブ表現や命令調を含まない | §8.3 Generator 注意点 / 付録 B「文言検査」観点 |
+| サーバが停止している（または /api 系エンドポイントが応答しない）状態でも、「今日のひとこと」はクライアントのみで表示される | §1.7 辞書格納方式 (A) 採用 / §7.8 サーバ通信なし / 付録 A「サーバ API: 変更なし」 |
+| 全テーマ（default / ocean / forest / night / sakura）に切り替えても、「今日のひとこと」要素が画面内に視認可能で、レイアウト崩れ・文字の重なりが発生しない | §7.8.6 CSS 方針（既存テーマ変数のみ使用） / 付録 A「既存テーマ CSS」行 |
+| 既存のウェルカムメッセージ表示（Feature 7）が破壊されておらず、ウェルカム文言は引き続き表示される | §7.8.5 既存機能との関係 / 付録 A「ウェルカムメッセージ表示」行 / §8.3 既存ファイル変更表 |
+| Evaluator が「Date を月曜・春の日付に固定 → アプリを開く → 月曜春のメッセージが DOM に存在 → リロードしても同じメッセージ → Date を金曜・冬の日付に変更 → 別のメッセージが表示される」というシナリオを Playwright 操作で再現・検証できる | §7.8.1 Date 注入 / 付録 B Sprint 8 観点 1〜4 / 下記 C.2 検証手順 |
+
+### C.2 Evaluator 検証手順サンプル（Playwright）
+
+```javascript
+// Sprint 8 受け入れ検証スニペット（Evaluator が sprint-8.md に反映）
+
+// 1. 月曜・春の固定検証
+await page.clock.install({ time: new Date("2026-03-02T10:00:00") }); // 月曜・春
+await page.goto("http://localhost:3000/");
+// オンボーディング完了済前提（既存 localStorage を事前 setup）
+
+const daily = page.locator("[data-daily-message]");
+await expect(daily).toBeVisible();
+await expect(daily).toHaveAttribute("data-weekday", "1");      // 月曜
+await expect(daily).toHaveAttribute("data-season", "spring");  // 春
+const monSpringText = await daily.locator(".daily-message-text").textContent();
+
+// 2. 決定性（リロードで同一文言）
+await page.reload();
+await expect(daily.locator(".daily-message-text")).toHaveText(monSpringText);
+
+// 3. 金曜・冬で別文言
+await page.clock.install({ time: new Date("2026-01-23T10:00:00") }); // 金曜・冬
+await page.reload();
+await expect(daily).toHaveAttribute("data-weekday", "5");
+await expect(daily).toHaveAttribute("data-season", "winter");
+const friWinterText = await daily.locator(".daily-message-text").textContent();
+expect(friWinterText).not.toBe(monSpringText);
+
+// 4. リセット後の再表示
+await page.click('button:has-text("新しい相談を始める")');
+await page.click('button:has-text("リセットして新しい相談を始める")');
+await expect(daily).toBeVisible();
+await expect(page.locator(".welcome-message")).toBeVisible();
+
+// 5. サーバ通信なし確認
+const requests = [];
+page.on("request", (req) => {
+  if (req.url().includes("daily") || req.url().includes("message")) requests.push(req.url());
+});
+await page.reload();
+expect(requests).toHaveLength(0); // 「今日のひとこと」専用リクエスト 0 件
+
+// 6. 全テーマ切替
+for (const theme of ["default", "ocean", "forest", "night", "sakura"]) {
+  await page.evaluate((t) => document.documentElement.setAttribute("data-theme", t), theme);
+  await expect(daily).toBeVisible();
+  // スクリーンショット保存 → 目視チェック
+  await page.screenshot({ path: `specs/evaluations/sprint-8-theme-${theme}.png` });
+}
+```
+
+### C.3 28 パターン網羅テーブル
+
+Evaluator は以下 28 ケースをすべて検証し、各セルで `data-weekday` / `data-season` 属性値と表示文言が辞書と一致することを確認する。
+
+| | 日 (0) | 月 (1) | 火 (2) | 水 (3) | 木 (4) | 金 (5) | 土 (6) |
+|---|---|---|---|---|---|---|---|
+| **春 (spring)** | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
+| **夏 (summer)** | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
+| **秋 (autumn)** | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
+| **冬 (winter)** | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
+
+各ケースの固定日付例:
+- 春: 2026-03-01 (Sun) / 03-02 (Mon) / 03-03 (Tue) / 03-04 (Wed) / 03-05 (Thu) / 03-06 (Fri) / 03-07 (Sat)
+- 夏: 2026-06-07 (Sun) / 06-08 (Mon) / 06-09 (Tue) / 06-10 (Wed) / 06-11 (Thu) / 06-12 (Fri) / 06-13 (Sat)
+- 秋: 2026-09-06 (Sun) / 09-07 (Mon) / 09-08 (Tue) / 09-09 (Wed) / 09-10 (Thu) / 09-11 (Fri) / 09-12 (Sat)
+- 冬: 2026-12-06 (Sun) / 12-07 (Mon) / 12-08 (Tue) / 12-09 (Wed) / 12-10 (Thu) / 12-11 (Fri) / 12-12 (Sat)
+
+冬の月境界（12月 vs 1月 vs 2月）も追加で 2026-01-23 (Fri / 冬) と 2026-02-13 (Fri / 冬) を入れ、季節判定が `[11, 0, 1]` の 3 ヶ月をすべてカバーすることを確認することが望ましい（R10 対策の派生検証）。

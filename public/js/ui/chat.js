@@ -1,5 +1,11 @@
 // ui/chat.js — メッセージ表示ロジック（Sprint 5 挙動を完全踏襲）。
 // message DOM には data-message-id を持たせ、絵文字セレクタはこの id で紐付ける（R3）。
+//
+// Sprint 8 / Feature 22:
+//   既存関数（showWelcomeMessage / addMessage / clearMessages 等）は一切変更しない。
+//   showDailyMessage / removeDailyMessage を追加 export のみで対応する（§7.8.5 / §8.3）。
+
+import { getDailyMessage } from "../dailyMessage.js";
 
 let chatMessagesEl = null;
 
@@ -126,4 +132,75 @@ export function markStreamingDone(rootDiv) {
 export function getMessageEl(id) {
   if (!chatMessagesEl) return null;
   return chatMessagesEl.querySelector(`[data-message-id="${CSS.escape(id)}"]`);
+}
+
+// ============================================================
+// Sprint 8 / Feature 22: 日替わりの一言メッセージ
+// ============================================================
+
+/**
+ * 既存の「今日のひとこと」DOM を全て削除する（冪等性のための事前クリーンアップ）。
+ * `showDailyMessage()` 内部から最初に呼ばれる。
+ * 既存メッセージや welcome に影響しないよう、`[data-daily-message]` 属性で限定する。
+ */
+export function removeDailyMessage() {
+  if (!chatMessagesEl) return;
+  const existing = chatMessagesEl.querySelectorAll("[data-daily-message]");
+  existing.forEach((el) => el.remove());
+}
+
+/**
+ * 「今日のひとこと」要素をチャットエリアに描画する。
+ *
+ * - DESIGN §4.6.1 / §4.6.2 / §8.3 に従い、`showWelcomeMessage()` の直前に呼ばれる前提。
+ *   その結果 DOM 上の並びは「[今日のひとこと] → [ウェルカム]」となる。
+ * - 冪等性: 先頭で `removeDailyMessage()` を呼ぶため、複数回呼んでも 1 要素のみ残る（§7.8.2）。
+ * - DOM 識別属性: `data-daily-message` / `data-weekday` / `data-season` を必ず付与（Evaluator 用）。
+ * - エラー耐性: `chatMessagesEl` 未取得時は `console.warn` のみで黙って中断（§7.8.3 / 既存非破壊）。
+ *
+ * @param {Date} [date=new Date()] - Date 注入可能（Evaluator が page.clock.install で固定する）
+ */
+export function showDailyMessage(date = new Date()) {
+  if (!chatMessagesEl) {
+    // 既存機能（ウェルカム表示等）の阻害を絶対に起こさないため、warn のみで return
+    console.warn(
+      "[dailyMessage] chatMessagesEl is not initialized; skip showDailyMessage()"
+    );
+    return null;
+  }
+
+  // 冪等性
+  removeDailyMessage();
+
+  const info = getDailyMessage(date);
+
+  const root = document.createElement("div");
+  root.classList.add("daily-message");
+  root.setAttribute("data-daily-message", "");
+  root.setAttribute("data-weekday", String(info.weekdayIndex));
+  root.setAttribute("data-season", info.season);
+  root.setAttribute("role", "note");
+  root.setAttribute(
+    "aria-label",
+    `今日のひとこと（${info.weekdayLabel}・${info.seasonLabel}）`
+  );
+
+  const labelEl = document.createElement("span");
+  labelEl.classList.add("daily-message-label");
+  labelEl.textContent = "今日のひとこと";
+  root.appendChild(labelEl);
+
+  const metaEl = document.createElement("span");
+  metaEl.classList.add("daily-message-meta");
+  metaEl.textContent = `${info.weekdayLabel}・${info.seasonLabel}`;
+  root.appendChild(metaEl);
+
+  const textEl = document.createElement("span");
+  textEl.classList.add("daily-message-text");
+  textEl.textContent = info.message;
+  root.appendChild(textEl);
+
+  chatMessagesEl.appendChild(root);
+  // scrollToBottom は呼ばない（初期表示の冒頭に出る要素なので、画面冒頭を維持する）
+  return root;
 }
