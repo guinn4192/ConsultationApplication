@@ -1748,4 +1748,171 @@ body {
   }
 }
 
+/* ============================================================
+   Sprint 9 / Feature 23: 相談テンプレート（チップ群 + 確認モーダル）
+   - 既存テーマ変数のみ使用（DESIGN §7.9.7）。新規 CSS 変数は追加しない。
+   - .template-button は既存 .category-button と同等の見た目に揃え、視覚的一貫性を保つ。
+   - 全 5 テーマ（default / ocean / forest / night / sakura）で自動整合（R16 対策）。
+   ============================================================ */
+.template-section {
+  margin-bottom: 12px;
+}
 
+.template-section-title {
+  font-family: var(--font-script);
+  font-size: 0.95rem;
+  color: var(--color-ink-soft);
+  margin-bottom: 6px;
+}
+
+.template-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.template-button {
+  font-family: var(--font-script);
+  font-size: 1rem;
+  padding: 4px 14px;
+  background: transparent;
+  color: var(--color-ink);
+  border: 2px solid var(--color-ink);
+  border-radius: 20px;
+  cursor: pointer;
+  filter: url(#rough);
+  transition: background-color 0.15s, color 0.15s, transform 0.1s;
+  font-weight: 600;
+}
+
+.template-button:hover {
+  background-color: rgba(61, 43, 26, 0.06);
+}
+
+[data-theme="night"] .template-button:hover {
+  background-color: rgba(205, 214, 244, 0.08);
+}
+
+.template-button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.template-button:active {
+  transform: translateY(1px);
+}
+
+/* ---- 置き換え確認モーダル ---- */
+.template-confirm-modal {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1100;
+}
+
+.template-confirm-modal.is-open {
+  display: flex;
+}
+
+.template-confirm-modal[hidden] {
+  display: none !important;
+}
+
+.template-confirm-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background-color: transparent;
+}
+
+.template-confirm-modal-content {
+  position: relative;
+  background-color: var(--color-paper);
+  color: var(--color-text);
+  border: 2.5px solid var(--color-ink);
+  border-radius: 12px;
+  padding: 24px 22px 20px;
+  max-width: 460px;
+  width: 100%;
+  filter: url(#rough);
+  z-index: 1;
+}
+
+.template-confirm-modal-title {
+  font-family: var(--font-script);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-ink);
+  margin: 0 0 12px 0;
+}
+
+.template-confirm-modal-description {
+  font-family: var(--font-hand);
+  font-size: 0.95rem;
+  color: var(--color-text);
+  margin: 0 0 18px 0;
+  line-height: 1.6;
+}
+
+.template-confirm-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.template-confirm-modal-button {
+  font-family: var(--font-script);
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 8px 16px;
+  background: transparent;
+  color: var(--color-ink);
+  border: 2px solid var(--color-ink);
+  border-radius: 10px;
+  cursor: pointer;
+  filter: url(#rough);
+  transition: transform 0.1s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.template-confirm-modal-button:hover {
+  transform: translateY(-1px);
+}
+
+.template-confirm-modal-button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.template-confirm-modal-button-confirm {
+  background-color: var(--color-ink);
+  color: var(--color-paper);
+}
+
+.template-confirm-modal-button-confirm:hover {
+  background-color: var(--color-accent-hover);
+}
+
+.template-confirm-modal-button-cancel:hover {
+  background-color: rgba(61, 43, 26, 0.08);
+}
+
+[data-theme="night"] .template-confirm-modal-button-cancel:hover {
+  background-color: rgba(205, 214, 244, 0.1);
+}
+
+@media (max-width: 600px) {
+  .template-confirm-modal-content {
+    padding: 20px 16px;
+  }
+  .template-confirm-modal-actions {
+    justify-content: stretch;
+  }
+  .template-confirm-modal-button {
+    flex: 1 1 auto;
+  }
+}

@@ -54,6 +54,21 @@
   <!-- Feature 21: 中断した会話の再開モーダル -->
   <div id="resume-modal" class="resume-modal" hidden aria-hidden="true"></div>
 
+  <!-- Feature 23 (Sprint 9): 相談テンプレート 置き換え確認モーダル -->
+  <div id="template-confirm-modal" class="template-confirm-modal" hidden
+       role="dialog" aria-modal="true" aria-labelledby="template-confirm-title"
+       aria-hidden="true">
+    <div class="template-confirm-modal-backdrop"></div>
+    <div class="template-confirm-modal-content">
+      <h3 id="template-confirm-title" class="template-confirm-modal-title">入力内容を置き換えますか？</h3>
+      <p class="template-confirm-modal-description">現在入力中の内容は失われます。テンプレートで置き換えてもよろしいですか？</p>
+      <div class="template-confirm-modal-actions">
+        <button type="button" class="template-confirm-modal-button template-confirm-modal-button-cancel" data-action="cancel">キャンセル</button>
+        <button type="button" class="template-confirm-modal-button template-confirm-modal-button-confirm" data-action="confirm">置き換える</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Feature 18: オンボーディング画面 -->
   <section id="onboarding-screen" class="onboarding-screen" hidden aria-label="ユーザー名登録"></section>
 
@@ -84,6 +99,17 @@
           <button type="button" class="category-button" data-category="日常生活">日常生活</button>
           <button type="button" class="category-button" data-category="恋愛">恋愛</button>
           <button type="button" class="category-button" data-category="お金">お金</button>
+        </div>
+      </div>
+      <!-- Feature 23 (Sprint 9): 相談テンプレート選択 UI -->
+      <div class="template-section" role="group" aria-label="相談テンプレート選択">
+        <p class="template-section-title">相談テンプレート:</p>
+        <div class="template-buttons">
+          <button type="button" class="template-button" data-template-id="workplace">職場の人間関係</button>
+          <button type="button" class="template-button" data-template-id="family">家族との関係</button>
+          <button type="button" class="template-button" data-template-id="career">進路・キャリア</button>
+          <button type="button" class="template-button" data-template-id="health">健康・体調の不安</button>
+          <button type="button" class="template-button" data-template-id="vague">漠然とした不安</button>
         </div>
       </div>
       <form id="consult-form" class="input-form">

@@ -1,0 +1,342 @@
+[
+  {
+    "url": "http://localhost:3000/",
+    "method": "GET",
+    "time": 1780350143658
+  },
+  {
+    "url": "https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Klee+One:wght@400;600&display=swap",
+    "method": "GET",
+    "time": 1780350143821
+  },
+  {
+    "url": "http://localhost:3000/style.css",
+    "method": "GET",
+    "time": 1780350143821
+  },
+  {
+    "url": "http://localhost:3000/js/main.js",
+    "method": "GET",
+    "time": 1780350143821
+  },
+  {
+    "url": "http://localhost:3000/js/state.js",
+    "method": "GET",
+    "time": 1780350143824
+  },
+  {
+    "url": "http://localhost:3000/js/api.js",
+    "method": "GET",
+    "time": 1780350143824
+  },
+  {
+    "url": "http://localhost:3000/js/ui/shared.js",
+    "method": "GET",
+    "time": 1780350143824
+  },
+  {
+    "url": "http://localhost:3000/js/ui/chat.js",
+    "method": "GET",
+    "time": 1780350143824
+  },
+  {
+    "url": "http://localhost:3000/js/ui/emotion.js",
+    "method": "GET",
+    "time": 1780350143824
+  },
+  {
+    "url": "http://localhost:3000/js/ui/summary.js",
+    "method": "GET",
+    "time": 1780350143824
+  },
+  {
+    "url": "http://localhost:3000/js/ui/onboarding.js",
+    "method": "GET",
+    "time": 1780350143825
+  },
+  {
+    "url": "http://localhost:3000/js/ui/history.js",
+    "method": "GET",
+    "time": 1780350143825
+  },
+  {
+    "url": "http://localhost:3000/js/ui/resume.js",
+    "method": "GET",
+    "time": 1780350143825
+  },
+  {
+    "url": "http://localhost:3000/js/ui/templateConfirm.js",
+    "method": "GET",
+    "time": 1780350143825
+  },
+  {
+    "url": "http://localhost:3000/js/ui/templates.js",
+    "method": "GET",
+    "time": 1780350143825
+  },
+  {
+    "url": "http://localhost:3000/js/router.js",
+    "method": "GET",
+    "time": 1780350143825
+  },
+  {
+    "url": "http://localhost:3000/js/dailyMessage.js",
+    "method": "GET",
+    "time": 1780350143828
+  },
+  {
+    "url": "http://localhost:3000/js/data/templates.js",
+    "method": "GET",
+    "time": 1780350143831
+  },
+  {
+    "url": "http://localhost:3000/js/data/dailyMessages.js",
+    "method": "GET",
+    "time": 1780350143831
+  },
+  {
+    "url": "http://localhost:3000/api/user/31233170-4243-495d-88a3-fb78a31b2155",
+    "method": "GET",
+    "time": 1780350143972
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4q4FUfemSYiv49tfllrv3pe-KYFKDXn9Sg.119.woff2",
+    "method": "GET",
+    "time": 1780350143977
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/caveat/v23/Wnz6HAc5bAfYB2Q7ZjYY.woff2",
+    "method": "GET",
+    "time": 1780350143978
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDI2apCLNRc6A8oT4pbYF8OpG_bEg9BQg0jk5IC-EIRaB2yYJkvAGA.119.woff2",
+    "method": "GET",
+    "time": 1780350144052
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDI2apCLNRc6A8oT4pbYF8OpG_bEg9BQg0jk5IC-EIRaB2yYJkvAGA.113.woff2",
+    "method": "GET",
+    "time": 1780350144052
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDI2apCLNRc6A8oT4pbYF8OpG_bEg9BQg0jk5IC-EIRaB2yYJkvAGA.110.woff2",
+    "method": "GET",
+    "time": 1780350144052
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4q4FUfemSYiv49tfllrv3pe-KYFKDXn9Sg.103.woff2",
+    "method": "GET",
+    "time": 1780350144052
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4q4FUfemSYiv49tfllrv3pe-KYFKDXn9Sg.107.woff2",
+    "method": "GET",
+    "time": 1780350144053
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4q4FUfemSYiv49tfllrv3pe-KYFKDXn9Sg.93.woff2",
+    "method": "GET",
+    "time": 1780350144053
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4p4HM-Y.woff2",
+    "method": "GET",
+    "time": 1780350144053
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4q4FUfemSYiv49tfllrv3pe-KYFKDXn9Sg.111.woff2",
+    "method": "GET",
+    "time": 1780350144053
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4q4FUfemSYiv49tfllrv3pe-KYFKDXn9Sg.113.woff2",
+    "method": "GET",
+    "time": 1780350144053
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4q4FUfemSYiv49tfllrv3pe-KYFKDXn9Sg.110.woff2",
+    "method": "GET",
+    "time": 1780350144053
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4q4FUfemSYiv49tfllrv3pe-KYFKDXn9Sg.106.woff2",
+    "method": "GET",
+    "time": 1780350144053
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDI2apCLNRc6A8oT4pbYF8OpG_bEg9BQg0jk5IC-EIRaB2yYJkvAGA.117.woff2",
+    "method": "GET",
+    "time": 1780350144053
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDI2apCLNRc6A8oT4pbYF8OpG_bEg9BQg0jk5IC-EIRaB2yYJkvAGA.112.woff2",
+    "method": "GET",
+    "time": 1780350144053
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4q4FUfemSYiv49tfllrv3pe-KYFKDXn9Sg.116.woff2",
+    "method": "GET",
+    "time": 1780350144053
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDI2apCLNRc6A8oT4pbYF8OpG_bEg9BQg0jk5IC-EIRaB2yYJkvAGA.114.woff2",
+    "method": "GET",
+    "time": 1780350144053
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDI2apCLNRc6A8oT4pbYF8OpG_bEg9BQg0jk5IC-EIRaB2yYJkvAGA.116.woff2",
+    "method": "GET",
+    "time": 1780350144053
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4q4FUfemSYiv49tfllrv3pe-KYFKDXn9Sg.114.woff2",
+    "method": "GET",
+    "time": 1780350144053
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4q4FUfemSYiv49tfllrv3pe-KYFKDXn9Sg.112.woff2",
+    "method": "GET",
+    "time": 1780350144053
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4q4FUfemSYiv49tfllrv3pe-KYFKDXn9Sg.117.woff2",
+    "method": "GET",
+    "time": 1780350144053
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4q4FUfemSYiv49tfllrv3pe-KYFKDXn9Sg.115.woff2",
+    "method": "GET",
+    "time": 1780350144053
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDI2apCLNRc6A8oT4pbYF8OpG_bEg9BQg0jk5IC-EIRaB2yYJkvAGA.107.woff2",
+    "method": "GET",
+    "time": 1780350144053
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDI2apCLNRc6A8oT4pbYF8OpG_bEg9BQg0jk5IC-EIRaB2yYJkvAGA.108.woff2",
+    "method": "GET",
+    "time": 1780350144053
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDI2apCLNRc6A8oT4pbYF8OpG_bEg9BQg0jk5IC-EIRaB2yYJkvAGA.106.woff2",
+    "method": "GET",
+    "time": 1780350144053
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDI2apCLNRc6A8oT4pbYF8OpG_bEg9BQg0jk5IC-EIRaB2yYJkvAGA.118.woff2",
+    "method": "GET",
+    "time": 1780350144053
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDI2apCLNRc6A8oT4pbYF8OpG_bEg9BQg0jk5IC-EIRaB2yYJkvAGA.104.woff2",
+    "method": "GET",
+    "time": 1780350144053
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDI2apCLNRc6A8oT4pbYF8OpG_bEg9BQg0jk5IC-EIRaB2yYJkvAGA.115.woff2",
+    "method": "GET",
+    "time": 1780350144053
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDI2apCLNRc6A8oT4pbYF8OpG_bEg9BQg0jk5IC-EIRaB2yYJkvAGA.105.woff2",
+    "method": "GET",
+    "time": 1780350144053
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDI2apCLNRc6A8oT4pbYF8OpG_bEg9BQg0jk5IC-EIRaB2yYJkvAGA.111.woff2",
+    "method": "GET",
+    "time": 1780350144053
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDI2apCLNRc6A8oT4pbYF8OpG_bEg9BQg0jk5IC-EIRaB2yYJkvAGA.71.woff2",
+    "method": "GET",
+    "time": 1780350144053
+  },
+  {
+    "url": "http://localhost:3000/api/sessions/resumable?uuid=31233170-4243-495d-88a3-fb78a31b2155",
+    "method": "GET",
+    "time": 1780350144054
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4q4FUfemSYiv49tfllrv3pe-KYFKDXn9Sg.118.woff2",
+    "method": "GET",
+    "time": 1780350144075
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4q4FUfemSYiv49tfllrv3pe-KYFKDXn9Sg.109.woff2",
+    "method": "GET",
+    "time": 1780350144076
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4q4FUfemSYiv49tfllrv3pe-KYFKDXn9Sg.105.woff2",
+    "method": "GET",
+    "time": 1780350144076
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4q4FUfemSYiv49tfllrv3pe-KYFKDXn9Sg.108.woff2",
+    "method": "GET",
+    "time": 1780350144076
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4q4FUfemSYiv49tfllrv3pe-KYFKDXn9Sg.92.woff2",
+    "method": "GET",
+    "time": 1780350144076
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4q4FUfemSYiv49tfllrv3pe-KYFKDXn9Sg.90.woff2",
+    "method": "GET",
+    "time": 1780350144076
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4q4FUfemSYiv49tfllrv3pe-KYFKDXn9Sg.104.woff2",
+    "method": "GET",
+    "time": 1780350144076
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4q4FUfemSYiv49tfllrv3pe-KYFKDXn9Sg.99.woff2",
+    "method": "GET",
+    "time": 1780350148204
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4q4FUfemSYiv49tfllrv3pe-KYFKDXn9Sg.100.woff2",
+    "method": "GET",
+    "time": 1780350153258
+  },
+  {
+    "url": "http://localhost:3000/api/sessions",
+    "method": "POST",
+    "time": 1780350153304
+  },
+  {
+    "url": "http://localhost:3000/api/consult/stream",
+    "method": "POST",
+    "time": 1780350153304
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4q4FUfemSYiv49tfllrv3pe-KYFKDXn9Sg.57.woff2",
+    "method": "GET",
+    "time": 1780350154118
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4q4FUfemSYiv49tfllrv3pe-KYFKDXn9Sg.94.woff2",
+    "method": "GET",
+    "time": 1780350154687
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4q4FUfemSYiv49tfllrv3pe-KYFKDXn9Sg.101.woff2",
+    "method": "GET",
+    "time": 1780350155205
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4q4FUfemSYiv49tfllrv3pe-KYFKDXn9Sg.95.woff2",
+    "method": "GET",
+    "time": 1780350157155
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/kleeone/v13/LDIxapCLNRc6A8oT4q4FUfemSYiv49tfllrv3pe-KYFKDXn9Sg.87.woff2",
+    "method": "GET",
+    "time": 1780350160855
+  }
+]

@@ -1,0 +1,142 @@
+[
+  {
+    "id": 1,
+    "name": "テンプレ UI 常時表示",
+    "pass": true,
+    "score": 10,
+    "detail": ".template-section visible=true"
+  },
+  {
+    "id": 2,
+    "name": "テンプレ 5 種類",
+    "pass": true,
+    "score": 10,
+    "detail": ".template-button count=5"
+  },
+  {
+    "id": 3,
+    "name": "テーマ判別可能なラベル",
+    "pass": true,
+    "score": 10,
+    "detail": "labels=[職場の人間関係, 家族との関係, 進路・キャリア, 健康・体調の不安, 漠然とした不安] hits=5/5"
+  },
+  {
+    "id": 4,
+    "name": "workplace クリックで本文+穴埋め",
+    "pass": true,
+    "score": 10,
+    "detail": "value=\"職場の人間関係で悩んでいます。具体的には___\" containsTemplate=true containsBlank=true"
+  },
+  {
+    "id": 5,
+    "name": "カーソルが ___ 範囲を選択 (workplace start=20,end=23)",
+    "pass": true,
+    "score": 10,
+    "detail": "selectionStart=20 selectionEnd=23 slice=\"___\" activeIsInput=true"
+  },
+  {
+    "id": 6,
+    "name": "フォーカスが #message-input",
+    "pass": true,
+    "score": 10,
+    "detail": "document.activeElement.id=\"message-input\""
+  },
+  {
+    "id": 7,
+    "name": "文字数カウンタが連動",
+    "pass": true,
+    "score": 10,
+    "detail": "counter=\"23 / 1000\" expected=23 actual=23"
+  },
+  {
+    "id": 8,
+    "name": "テンプレ選択でカテゴリ自動確定なし",
+    "pass": true,
+    "score": 10,
+    "detail": "beforeActive=0 afterActive=0"
+  },
+  {
+    "id": 14,
+    "name": "別テンプレ連続クリックでモーダル経由せず置換",
+    "pass": true,
+    "score": 10,
+    "detail": "value=\"家族とのことで気持ちが落ち着きません。特に___...\" modalHidden=true isFamily=true"
+  },
+  {
+    "id": 9,
+    "name": "カテゴリ事前選択がテンプレ挿入で維持",
+    "pass": true,
+    "score": 10,
+    "detail": "beforeCat=人間関係 afterCat=人間関係"
+  },
+  {
+    "id": 10,
+    "name": "既入力時にテンプレ → 確認モーダル表示",
+    "pass": true,
+    "score": 10,
+    "detail": "#template-confirm-modal visible=true"
+  },
+  {
+    "id": 11,
+    "name": "キャンセルで既入力保持",
+    "pass": true,
+    "score": 10,
+    "detail": "valueAfterCancel=\"自分で書いた相談文です。\" modalHidden=true"
+  },
+  {
+    "id": 12,
+    "name": "「置き換える」で本文置換",
+    "pass": true,
+    "score": 10,
+    "detail": "value=\"これからの進路について迷っています。今気になっているのは___...\""
+  },
+  {
+    "id": 13,
+    "name": "空欄時はモーダル経由せず即挿入",
+    "pass": true,
+    "score": 10,
+    "detail": "modalHidden=true value=\"職場の人間関係で悩んでいます。具体的には___...\""
+  },
+  {
+    "id": 15,
+    "name": "キーボード（Enter）でテンプレ挿入",
+    "pass": true,
+    "score": 10,
+    "detail": "value=\"最近、体や心の調子が気になっています。具体的には___...\""
+  },
+  {
+    "id": 16,
+    "name": "全 5 テーマで視認可能",
+    "pass": true,
+    "score": 10,
+    "detail": "default=OK ocean=OK forest=OK night=OK sakura=OK"
+  },
+  {
+    "id": 18,
+    "name": "テンプレ選択で新規リクエスト 0 件",
+    "pass": true,
+    "score": 10,
+    "detail": "requests delta=0 urls=[]"
+  },
+  {
+    "id": 17,
+    "name": "サーバ通信なし（クライアント完結）",
+    "pass": true,
+    "score": 10,
+    "detail": "テンプレ挿入で fetch 発生せず (#18 と統合) delta=0"
+  },
+  {
+    "id": 19,
+    "name": "挿入後の通常送信フローが動作",
+    "pass": true,
+    "score": 10,
+    "detail": "userOk=true assistantOk=true assistantTextLen=37"
+  },
+  {
+    "id": 20,
+    "name": "シナリオ A/B が Playwright で検証可能",
+    "pass": true,
+    "score": 10,
+    "detail": "failed prior items=[] (#19 まで全部通れば 10)"
+  }
+]

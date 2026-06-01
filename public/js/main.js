@@ -34,6 +34,8 @@ import { initSummary, open as openSummary } from "./ui/summary.js";
 import { initOnboarding, show as showOnboarding, hide as hideOnboarding } from "./ui/onboarding.js";
 import { initHistory, showList as showHistoryList, showDetail as showHistoryDetail, hide as hideHistory } from "./ui/history.js";
 import { initResume, showModal as showResumeModal, dismiss as dismissResumeModal } from "./ui/resume.js";
+import { initTemplateConfirm, confirm as confirmTemplateReplace } from "./ui/templateConfirm.js";
+import { initTemplates } from "./ui/templates.js";
 import { subscribe as subscribeRoute, start as startRouter, navigate, ROUTES } from "./router.js";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -52,6 +54,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const charCount = document.getElementById("char-count");
   const summaryModal = document.getElementById("summary-modal");
   const resumeModal = document.getElementById("resume-modal");
+  const templateConfirmModal = document.getElementById("template-confirm-modal");
+  const templateSection = document.querySelector(".template-section");
   const onboardingScreen = document.getElementById("onboarding-screen");
   const historyScreen = document.getElementById("history-screen");
   const headerUserName = document.getElementById("header-user-name");
@@ -104,6 +108,17 @@ document.addEventListener("DOMContentLoaded", () => {
       resetModeAndCategoryUi();
       updateNewConsultationButton();
     },
+  });
+
+  // Sprint 9 / Feature 23: 相談テンプレート（穴埋め式チップ群 + 置き換え確認モーダル）
+  // 順序: モーダルの DOM 配線（initTemplateConfirm）を先に行ってから、
+  //       テンプレボタンが confirm() を呼べる状態で initTemplates する（DESIGN §8.4 ステップ 5）。
+  initTemplateConfirm(templateConfirmModal);
+  initTemplates({
+    container: templateSection,
+    input,
+    getIsStreaming: () => state.isStreaming(),
+    confirmReplace: () => confirmTemplateReplace(),
   });
 
   // Sprint 5 の既定モード（default）を反映

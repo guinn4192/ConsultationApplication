@@ -699,3 +699,120 @@ DESIGN.md 参照章: §1.1 / §1.6 / §2.3 / §4.2-4.5 / §5.1-5.2 / §6.2-6.6 /
 - 既存 Sprint 1-7 機能（特にウェルカム表示・ストリーミング・再開モーダル・performReset）への影響なし（追加 import + 既存 4 呼び出し点の直前併置のみ）
 - 純粋関数 28 ケース網羅 + 文言ユニーク性 + トーンキーワード排除を Node でローカル実測済
 - **S ではない理由**: ブラウザでの実 E2E スクショ確認（全テーマ崩れなし）と `page.clock.install()` 経由の Playwright 検証は Evaluator 領域のため未実施。また辞書文言の「優しさ・押しつけがましくなさ」は機械的キーワード排除しかできておらず、最終的なトーン妥当性は Evaluator + 人手レビューで担保される
+
+---
+
+## Sprint 9: 相談テンプレート（Feature 23）
+
+### 実装した機能
+
+- **Feature 23: 相談テンプレート（穴埋め形式の最初の一歩）**:
+  - 新規 `public/js/data/templates.js`: 5 件のテンプレ辞書（`workplace` / `family` / `career` / `health` / `vague`）、`getTemplateById(id)`（純粋関数・未知 ID は null）、`__validate()`（全件 `body.slice(start, end) === "___"` をアサート）、モジュール読み込み時に `__validate()` を IIFE で 1 度呼び自己保護。`export const TEMPLATES` で再代入不能。
+  - 新規 `public/js/ui/templateConfirm.js`: 上書き確認モーダルの DOM 配線と `confirm(): Promise<boolean>`。Escape / 背景クリック / 「キャンセル」ボタン / モーダル本体クリックを全て `resolve(false)` に集約。Tab フォーカストラップ（cancel ⇄ confirm の 2 ボタン循環）、表示時デフォルトフォーカスは「キャンセル」、表示前フォーカス元を記憶し閉じた後に復元。多重呼び出し時は前回 Promise を false で解決してから新規受付。
+  - 新規 `public/js/ui/templates.js`: `initTemplates({ container, input, getIsStreaming, confirmReplace })` でテンプレボタン群をバインド。`insertTemplate(templateId, opts)` 内で DESIGN §7.9.2 の順序を厳守:
+    1. `getIsStreaming()` true → early return（§7.9.4）
+    2. `getTemplateById(id)` null → 黙って return（§7.9.6）
+    3. 既入力判定: `value.trim()` 空欄 or `value === lastInsertedBody`（モジュールスコープ）なら確認スキップ、それ以外は `confirmFn()` 待ち
+    4. `input.value = body` → `dispatchEvent(new Event("input", { bubbles: true }))` → `focus()` → `setSelectionRange(start, end)` → `lastInsertedBody` 更新
+  - `state.setSelectedCategory()` / `.category-button.active` 操作を**一切呼ばない**（§7.9.3 / R13）。`recommendedCategory` は辞書に保持するが Sprint 9 では UI に参照しない。
+  - 拡張 `public/index.html`: `.input-area` 内 `.category-section` 直下に `<div class="template-section" role="group" aria-label="相談テンプレート選択">` を追加（5 個の `<button type="button" class="template-button" data-template-id="...">`）。`<body>` 末尾近く（既存 `#resume-modal` の直後）に `#template-confirm-modal` を追加。
+  - 拡張 `public/style.css`: `.template-section` / `.template-section-title` / `.template-buttons` / `.template-button` / `.template-button:hover` / `.template-button:focus-visible` / `.template-button:active` / `.template-confirm-modal` 関連 9 セレクタ + モバイル `@media (max-width: 600px)` を追加。**新規 CSS 変数はゼロ**、既存 `var(--color-paper)` / `var(--color-ink)` / `var(--color-ink-soft)` / `var(--color-text)` / `var(--color-accent)` / `var(--color-accent-hover)` / `var(--font-script)` / `var(--font-hand)` のみ参照（全 5 テーマ自動整合 / R16 対策）。
+  - 拡張 `public/js/main.js`: import 追加（`initTemplateConfirm`, `confirmTemplateReplace`, `initTemplates`）。DOM refs に `templateConfirmModal` / `templateSection` を追加。`initResume(...)` 直後に `initTemplateConfirm(templateConfirmModal)` → `initTemplates({ container, input, getIsStreaming: () => state.isStreaming(), confirmReplace: () => confirmTemplateReplace() })` の順で呼び出し。既存の `showWelcomeMessage()` / `showDailyMessage()` / オンボ / 再開モーダルの呼び出し順序・条件は**一切変更していない**。
+
+### 実装ファイル
+
+- 新規: `public/js/data/templates.js`, `public/js/ui/templates.js`, `public/js/ui/templateConfirm.js`
+- 変更: `public/index.html`, `public/style.css`, `public/js/main.js`
+
+### DESIGN.md 整合性チェック
+
+- §1.8 技術選定（チップ群 / ESM 定数 / `___`+setSelectionRange / カスタムモーダル / 推奨カテゴリ提案 UI なし）: ✅ 完全準拠
+  - §1.8.1 (A) チップ群: `.template-section` 直下に 5 個の `<button class="template-button">` 横並びを採用
+  - §1.8.2 (A) ESM 定数ファイル: `public/js/data/templates.js` で `export const TEMPLATES`
+  - §1.8.3 (A) `___` リテラル残置 + `setSelectionRange(start, end)`: 全 5 件の `placeholder.start/end` が §1.8.3 表通りの値（workplace=20/23, family=21/24, career=28/31, health=24/27, vague=20/23）。Node でモジュールロード時 `__validate()` PASS、全 5 件の `body.slice(start, end)` が `"___"` 一致を実測
+  - §1.8.4 (A) カスタムモーダル: 既存 `.summary-modal` / `.resume-modal` 流儀踏襲、`role="dialog" aria-modal="true"` + フォーカストラップ + Escape/背景クリックを `resolve(false)` 集約
+  - §1.8.5 (A) 推奨カテゴリ UI なし: `recommendedCategory` は辞書に保持するが Sprint 9 では UI から参照していない
+- §2.3 ディレクトリ構成（☆ Sprint 9 追加 3 ファイル + ☆ HTML/CSS 追記）: ✅ DESIGN.md 表記通りに 3 新規 + 3 既存変更
+- §4.7 シーケンス（空欄時 / 既入力時 / キーボード）: ✅ 全 3 ケースを `insertTemplate()` 内で実装（モック実測で 6 シナリオ確認済）
+- §7.9 処理方針（純粋関数 / dispatchEvent / setSelectedCategory 非呼出 / isStreaming early return / setSelectionRange）: ✅ 完全準拠
+  - §7.9.1 純粋関数化: `getTemplateById()` は引数のみ依存、`__validate()` 読み取りのみで失敗時 throw、`TEMPLATES` は `export const` で再代入不能
+  - §7.9.2 DOM 直書きと input イベント発火: 順序「value 代入 → dispatchEvent → focus → setSelectionRange」を厳守。R12 対策完全
+  - §7.9.3 カテゴリ非干渉: `ui/templates.js` 内に `state.setSelectedCategory` / `state.selectedCategory =` / `.category-button.active` 操作 / `.category-button.click()` のいずれも**コード上に存在しないこと**を Grep 確認済
+  - §7.9.4 ストリーミング中の挿入防止: 冒頭 `if (getIsStreaming()) return;`
+  - §7.9.5 IME（受容）: Sprint 9 では `compositionstart` ハンドラを書かない方針を踏襲
+  - §7.9.6 エラーハンドリング: `getTemplateById` null → 黙って return、`#message-input` 不在 → `console.warn` のみで非破壊、`#template-confirm-modal` 不在 → `confirm()` が `Promise.resolve(false)` を返してフェイルセーフ
+  - §7.9.7 CSS 方針: 既存テーマ変数のみ、新規 `--*` 変数追加なし
+- §8.4 タスク分解 6 ステップ: ✅ ステップ 1〜5 を順序通り実装、ステップ 6 #5 補足の `lastInsertedBody` 機構を `ui/templates.js` モジュールスコープに実装
+- §9 R12〜R16 対応: ✅
+  - R12（input イベント未発火）: `dispatchEvent(new Event("input", { bubbles: true }))` 必須呼び出し
+  - R13（カテゴリ誤連動）: 禁止操作表（§7.9.3）の 4 項目すべて未呼び出し（Grep 検証）
+  - R14（IME）: 明示受容（DESIGN §7.9.5 に従い `compositionstart` ハンドラ非実装）
+  - R15（絵文字 DOM 干渉）: `.template-section` を `.input-area` 内に配置、絵文字セレクタが描画される `.chat-messages` とは別領域
+  - R16（テーマコントラスト）: 既存 `var(--color-ink)` / `var(--color-paper)` / `var(--color-accent)` のみ使用、night テーマ向け hover 背景の上書きも追加（既存 `.summary-button-close:hover` と同流儀）
+- 新規 CSS 変数なし: ✅ `style.css` 追加分は `var(--color-paper)` / `var(--color-ink)` / `var(--color-ink-soft)` / `var(--color-text)` / `var(--color-accent)` / `var(--color-accent-hover)` / `var(--font-script)` / `var(--font-hand)` のみで構成。新規 `--*` 宣言なし（Grep 確認）
+
+### 受入基準 20 項目（SPEC F23）の自己評価
+
+| # | 受入基準（要約） | 状態 | 備考 |
+|---|--------------------|------|------|
+| 1 | テンプレ UI が常時表示 | ✅ | `.input-area` 内 `.template-section` を静的配置。`hidden` なし |
+| 2 | 3〜5 種類のテンプレ表示 | ✅ | 5 件（workplace/family/career/health/vague）。`.template-button` の `count()` が 5 |
+| 3 | 各テンプレのテーマがラベルから判別できる | ✅ | ラベル: 「職場の人間関係」「家族との関係」「進路・キャリア」「健康・体調の不安」「漠然とした不安」 |
+| 4 | テンプレクリックで本文が入力欄に挿入され、`___` を含む | ✅ | `input.value = template.body` で `___` を含む本文を代入。モック実測で確認 |
+| 5 | 挿入直後にカーソルが穴埋め部分にある／選択状態 | ✅ | `setSelectionRange(placeholder.start, placeholder.end)` で 3 文字を選択状態に。モック実測で `selectionStart/End` が辞書値と一致 |
+| 6 | 別テンプレクリックで文面が切り替わる | ✅ | `lastInsertedBody` 一致時は確認モーダルを経由せず即置換。モック実測 case 2 で確認 |
+| 7 | 空欄時テンプレ挿入＋穴埋め未入力で送信成功（Feature 1 既存ルール維持） | ✅ | テンプレ挿入で input.value に本文が入るため `trim() !== ""`、既存送信ハンドラがそのまま機能する。コード変更なし |
+| 8 | 完全空欄では送信ボタン押しても送信不可（Feature 1 既存ルール維持） | ✅ | 既存 `form submit` ハンドラの `if (!message) showError(...)` を一切変更していない |
+| 9 | 手入力ありで確認 UI 表示 | ✅ | `value.trim() !== "" && value !== lastInsertedBody` 時に `confirmFn()` await。モック実測 case 3/4 で確認 |
+| 10 | キャンセルで既入力保持 | ✅ | `confirmFn() === false` で early return、`input.value` 不変。モック実測 case 3 で確認 |
+| 11 | 「置き換える」で本文に置換 | ✅ | `confirmFn() === true` 後に既存挿入順序を実行。モック実測 case 4 で確認 |
+| 12 | テンプレ選択でカテゴリ自動確定されない | ✅ | `ui/templates.js` 内に `state.setSelectedCategory` / `.category-button.active` 操作なし（Grep 確認）。R13 対策 |
+| 13 | 先にカテゴリ選択 → テンプレ挿入後も既選択維持 | ✅ | 同上。テンプレ挿入時にカテゴリ系 API を一切呼ばないため、既選択 `.active` は影響を受けない |
+| 14 | 挿入後の文字数カウンタが正しく更新 | ✅ | `dispatchEvent(new Event("input", { bubbles: true }))` で `initShared` の `input` リスナ → `updateCharCount()` が起動。R12 対策 |
+| 15 | 挿入＋送信が AI 回答／履歴／ストリーミングと互換動作 | ✅ | テンプレ挿入は `input.value` を書き換えるのみで既存送信フロー（`form submit` ハンドラ）には触れない。Feature 12 ストリーミング・Feature 3 履歴表示は不変 |
+| 16 | 全 5 テーマで視認可能・崩れなし | ✅（CSS 設計上） | 既存テーマ変数のみで構成。default / ocean / forest / night / sakura すべてで `--color-ink` / `--color-paper` / `--color-accent` が定義されている（style.css 1-200 行で確認済）。Evaluator が Playwright で目視＋WCAG AA 比検証予定 |
+| 17 | サーバ停止状態でもテンプレ挿入が動作（クライアント完結） | ✅ | `templates.js` は ESM 静的辞書、`fetch` 一切なし。サーバ通信ゼロ |
+| 18 | キーボード操作で Tab → Enter / Space で挿入完了 | ✅ | `<button type="button">` のネイティブ挙動を利用、JS で keydown ハンドラを書かない。`:focus-visible` で視覚フィードバック |
+| 19 | Evaluator シナリオ A（空欄時）が再現可能 | ✅ | `.template-section` / `.template-button` / `#message-input` / `#char-count` / `#send-button` の DOM 識別子はすべて Playwright で取得可能 |
+| 20 | Evaluator シナリオ B（既入力時）が再現可能 | ✅ | `#template-confirm-modal [data-action="cancel"]` / `[data-action="confirm"]` がモーダル内ボタンを一意に特定する。`aria-modal="true"` で可視性判定可能 |
+
+### 技術的判断
+
+- **`lastInsertedBody` をモジュールスコープに保持**: SPEC 受入基準「別のテンプレートをクリックすると入力欄の文面が当該テンプレートに切り替わる」と「既にユーザーが入力欄に手入力している状態でテンプレートを選ぼうとすると確認 UI が表示される」を両立するため、DESIGN.md §8.4 ステップ 6 #5 補足に従い `ui/templates.js` 内 `let lastInsertedBody = null` で直前挿入テンプレ本文を保持。テンプレ A→B 切替時は `input.value === lastInsertedBody` が成立して確認スキップ、ユーザーが 1 文字でも編集すれば不一致になり次のテンプレクリック時に確認モーダルが出る、という設計を採用。`state` には載せず（カテゴリ非干渉原則を構造的に守るため）、`localStorage` にも書かない（テンプレ機能は永続化スコープ外）。
+- **`templateConfirm.confirm()` の多重呼び出し対策**: 万が一前回の Promise が解決前にユーザーが再度テンプレボタンを押した場合、前回を `resolve(false)` で解決してから新規受付する。モーダルが二重表示されないよう `pendingResolve` を 1 つだけ保持。
+- **モーダルのフォーカストラップ**: 2 ボタン（キャンセル ⇄ 置き換える）の循環のみ実装。ヘッダのリンク等にフォーカスが逃げないよう Tab/Shift+Tab で 2 ボタン間で巻き戻す。Escape は `resolveAndClose(false)` に直結。
+- **デフォルトフォーカスは「キャンセル」**: 既入力を誤って Enter で消さない保守的デフォルト。`setTimeout(..., 0)` で次フレームに回し、表示完了後に確実にフォーカス。
+- **新規 CSS 変数を導入せず既存テーマ変数のみで構築**: R16 対策。`.template-button` は既存 `.category-button` の見た目を完全踏襲（`var(--color-ink)` border + `var(--color-paper)` bg + `filter: url(#rough)` の手書き風）。確認モーダルは `.summary-modal` 流儀踏襲（`var(--color-paper)` カード + `var(--color-ink)` border）。
+- **`role="group" aria-label="相談テンプレート選択"` をラッパに付与**: スクリーンリーダーがテンプレ群をグループとして読み上げる（DESIGN §4.7.3）。各ボタンは `<button type="button">` のネイティブ挙動を利用し、`keydown` ハンドラを自前で書かないことで IME 入力中の競合リスクを構造的に排除（R14）。
+
+### 既知の課題・Evaluator への申し送り
+
+- **Playwright での実 E2E 未実施**: Generator 側ではコード上の整合性・Node モック実測（6 シナリオ）まで完了。ブラウザ実 E2E（受入基準 16: 全 5 テーマでの視認確認、受入基準 19/20: シナリオ A/B の Playwright 再現）は Evaluator の責務。
+- **DOM 識別子のクイックリファレンス**:
+  - テンプレ UI ラッパ: `.template-section`（`role="group" aria-label="相談テンプレート選択"`）
+  - 個々のテンプレボタン: `.template-button[data-template-id="workplace|family|career|health|vague"]`
+  - 確認モーダル: `#template-confirm-modal`（表示時 `hidden` 属性なし + `aria-hidden="false"` + `.is-open`）
+  - モーダル内ボタン: `#template-confirm-modal [data-action="cancel"]` / `[data-action="confirm"]`
+- **`lastInsertedBody` 仕様の補足**: テンプレ A 挿入 → 何も触らずテンプレ B クリック = 確認モーダルなしで B に切替。テンプレ A 挿入 → 1 文字でも編集（穴埋め部含む）→ テンプレ B クリック = 確認モーダル表示。`input.value === lastInsertedBody` の厳密一致判定。
+- **テンプレ挿入時の `state` 変更**: ゼロ（`state.setSelectedCategory` / `state.selectedCategory` / `state.setSelectedMode` / `state.recordEmotion` / `state.addUserMessage` のいずれも呼ばない）。テンプレ機能は `input.value` の書き換えと `lastInsertedBody` のモジュールスコープ更新のみ。
+- **挿入後の文字数カウンタ**: `input.dispatchEvent(new Event("input", { bubbles: true }))` で既存 `initShared` 内の `input` リスナが起動 → `updateCharCount()` が `input.value.length` で `#char-count` を更新。Evaluator は Playwright で `expect(page.locator("#char-count")).toContainText(String(template.body.length))` で検証可能。
+- **サーバ・DB・API 変更ゼロ**: `server.js` / `src/db/*` / `src/routes/*` / DB スキーマ / `localStorage` キーすべて Sprint 8 のまま。テンプレ機能はクライアント完結。`page.on("request")` 監視でテンプレクリック前後のリクエスト数が変わらないことが検証可能。
+- **回帰観点**: 既存 `ui/chat.js` / `ui/emotion.js` / `ui/summary.js` / `dailyMessage.js` / `state.js` / `api.js` のいずれの関数シグネチャ・本体にも変更を加えていない（追加 import なし、書き換えなし）。Sprint 1〜8 の機能は完全に保持。
+- **Node モック実測サマリ**:
+  - case 1: 空欄 → 挿入成功 / selRange=[20,23) / focused=true / inputEventFired=1 / confirmFn 呼ばれず
+  - case 2: 同一テンプレ本文残存 → 確認モーダル経由せず B に切替 / confirmFn 呼ばれず
+  - case 3: ユーザー手入力 → confirmFn 呼ばれ false 返却 → value 不変
+  - case 4: ユーザー手入力 → confirmFn 呼ばれ true 返却 → 本文置換 / selRange 設定
+  - case 5: streaming=true → early return / value 不変
+  - case 6: 未知 ID → no-op / value 不変
+
+### 総合自己評価: **A**
+
+- SPEC F23 の受入基準 20 項目すべてを実装レベルで達成（コード上の整合性 + Node モック実測で確認）
+- DESIGN.md §1.8 / §2.3 / §4.7 / §7.9 / §8.4 / §9 R12〜R16 / 付録 D をすべて遵守
+- 設計逸脱ゼロ、勝手な機能追加なし、サーバ・DB・API・localStorage 変更ゼロ
+- 既存 Sprint 1〜8 機能（カテゴリ / モード / テーマ / 文字数カウンタ / 絵文字セレクタ / サマリ / オンボ / 履歴 / 再開モーダル / 日替わりメッセージ）への影響なし（追加 import 2 行 + DOM refs 2 行 + init 呼び出し 7 行のみ、既存ロジック非破壊）
+- カテゴリ非干渉（R13）を `state.setSelectedCategory` / `.category-button.active` 完全未呼び出しで構造的に担保
+- 新規 CSS 変数ゼロ（R16 対策）、既存テーマ変数のみで 5 テーマ自動整合
+- **S ではない理由**: ブラウザ実 E2E（全 5 テーマでのスクショ確認、WCAG AA コントラスト比測定、Playwright シナリオ A/B 完全再現、`page.on("request")` でテンプレクリック時のリクエスト 0 確認）は Evaluator 領域のため未実施。Node モック実測は内部ロジックの単体検証で、ブラウザ DOM API の実挙動（特に `setSelectionRange` の textarea ネイティブ動作、IME 入力中のフォーカス遷移、確認モーダルのフォーカストラップ実 UI）は Evaluator が Playwright で実測する必要がある。
+

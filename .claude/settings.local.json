@@ -107,7 +107,12 @@
       "Bash(rmdir /tmp/data)",
       "Bash(where playwright *)",
       "Bash(not exist *)",
-      "Bash(tasklist /FI \"IMAGENAME eq node.exe\")"
+      "Bash(tasklist /FI \"IMAGENAME eq node.exe\")",
+      "Bash(awk '/^### Feature 23:/,/^### |^## /' /c/ConsultationApplication/specs/SPEC.md)",
+      "Bash(git -C /c/ConsultationApplication diff --stat public/style.css)",
+      "Bash(git -C /c/ConsultationApplication diff public/style.css)",
+      "Bash(git *)",
+      "Bash(powershell *)"
     ]
   }
 }
