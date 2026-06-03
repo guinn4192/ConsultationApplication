@@ -13,7 +13,7 @@ tags:
 
 ## 概要
 
-クライアント側のエントリ（= エントリポイント。ブラウザが [[frontend-entry]] の `<script type="module" src="js/main.js">` 経由で最初にロード・実行する JS モジュール）。[[frontend-glossary#DOM|`DOMContentLoaded`]] で全モジュール（[[client-state]] / [[client-api]] / [[client-router]] / [[ui-shared]] / [[ui-chat]] / [[ui-emotion]] / [[ui-summary]] / [[ui-onboarding]] / [[ui-history]] / [[ui-resume]]）を初期化し、起動シーケンス・ルーター[[frontend-glossary#購読 (subscribe)|購読]]・送信ハンドラを束ねる。
+クライアント側のエントリ（= エントリポイント。ブラウザが [[frontend-entry]] の `<script type="module" src="js/main.js">` 経由で最初にロード・実行する JS モジュール）。[[frontend-glossary#DOM|`DOMContentLoaded`]] で全モジュール（[[client-state]] / [[client-api]] / [[client-router]] / [[ui-shared]] / [[ui-chat]] / [[ui-emotion]] / [[ui-summary]] / [[ui-onboarding]] / [[ui-history]] / [[ui-resume]] / [[ui-templates]] / [[ui-template-confirm]]）を初期化し、起動シーケンス・ルーター[[frontend-glossary#購読 (subscribe)|購読]]・送信ハンドラを束ねる。
 
 なお SPA 全体としてのエントリは2階層に分かれる: **HTML エントリ** が [[frontend-entry]]（`public/index.html`）、**JS エントリ** が本ページの `public/js/main.js`。
 
@@ -24,6 +24,15 @@ tags:
 1. 必要な [[frontend-glossary#DOM|DOM]] ref を `getElementById` / `querySelectorAll` で取得（[[frontend-entry]] が宣言した要素）
 2. 各 UI モジュールを `init*` 呼び出しで[[frontend-glossary#配線 (wiring)|配線]]（コールバック経由で onComplete / onResume / onFreshStart / onResetClick を渡す）
 3. `state.onEmotionRecorded` を[[frontend-glossary#購読 (subscribe)|購読]] → [[client-api]] `saveEmotion` を発火（DB 永続化、失敗時は `showPersistError` [[frontend-glossary#トースト (toast)|トースト]]）
+
+## 相談テンプレート配線（Sprint 9 / Feature 23）
+
+`init*` 群の中で、**モーダルの配線を先**にしてからテンプレボタンを配線する（DESIGN §8.4 ステップ5。テンプレボタンが `confirm()` を呼べる状態を保証するため）:
+
+1. `initTemplateConfirm(templateConfirmModal)` — [[ui-template-confirm]]
+2. `initTemplates({ container: templateSection, input, getIsStreaming: () => state.isStreaming(), confirmReplace: () => confirmTemplateReplace() })` — [[ui-templates]]
+
+テンプレ機能は state を持たないため、bootstrap や送信ハンドラとの結合はこの初期化のみ。
 
 ## Bootstrap シーケンス
 
@@ -71,9 +80,10 @@ tags:
 - [[frontend-bootstrap]] — bootstrap の規約
 - [[consult-stream-protocol]] — submit ハンドラ内 SSE
 - [[ui-shared]] / [[ui-chat]] / [[ui-emotion]] / [[ui-summary]] / [[ui-onboarding]] / [[ui-history]] / [[ui-resume]] — 全画面モジュール
+- [[ui-templates]] / [[ui-template-confirm]] — 相談テンプレート（Feature 23）
 - [[client-state]] / [[client-api]] / [[client-router]]
 - [[frontend-glossary]] — DOM / 配線 / 購読 / トーストなど汎用ウェブ用語
 
 ## 出典
 
-- `C:\ConsultationApplication\public\js\main.js:1-440`
+- `C:\ConsultationApplication\public\js\main.js:1-455`（テンプレ配線 §110-122 付近）

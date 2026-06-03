@@ -95,3 +95,8 @@ ConsultationApplication向けLLM-Wikiの時系列ログ。append-onlyで保守�
 ## [2026-05-07] ingest | Resume を frontend-glossary に追加
 - 触れたページ: [[frontend-glossary]], [[session-lifecycle]]
 - メモ: Resume は一般語（ブラウザ復元・動画続き再生・HTTP Range・OS sleep 等）と判定し、[[frontend-glossary#Resume / 再開]] を新設。プロジェクト固有の「当日のみ」制約は [[session-lifecycle]] §Resume へ誘導。session-lifecycle 側からも `[[frontend-glossary#Resume / 再開|Resume]]` で逆リンク。Obsidian の Page Preview で見出し単位プレビューが効く形式で記述。
+
+## [2026-06-04] ingest | 相談テンプレート機能（Sprint 9 / Feature 23）
+- 対象: `C:\ConsultationApplication\public\js\ui\templates.js`, `...\js\data\templates.js`, `...\js\ui\templateConfirm.js`, `...\index.html`, `...\js\main.js`, `...\style.css`（コミット 987de52）
+- 触れたページ: [[ui-templates]], [[ui-template-confirm]], [[client-main]], [[frontend-entry]], [[frontend-style]]
+- メモ: ui-templates / ui-template-confirm を新規作成。.evaluator_tmp/・*.png・specs/ はスキーマに従いスキップ。「昨日(06-03)」のコミットは存在せず、最新コミット 987de52(06-02 相談テンプレート機能追加) を対象とした。

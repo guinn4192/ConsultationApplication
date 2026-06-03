@@ -10,7 +10,7 @@ tags: [frontend, css, style, theme]
 
 ## 概要
 
-唯一のスタイルシート（1690行）。CSS 変数で 5 テーマを切り替え、SVG `<filter>` 参照で「鉛筆＋方眼ノート」風の質感を出す。詳細な配色・フィルタ仕様は [[theming-system]] に切り出し済み。本ページは構造インデックスとして機能する。
+唯一のスタイルシート（1918行）。CSS 変数で 5 テーマを切り替え、SVG `<filter>` 参照で「鉛筆＋方眼ノート」風の質感を出す。詳細な配色・フィルタ仕様は [[theming-system]] に切り出し済み。本ページは構造インデックスとして機能する。
 
 ## ファイル構造（行範囲）
 
@@ -31,6 +31,7 @@ tags: [frontend, css, style, theme]
 | `:1509-1617` | resume modal（Feature 21） |
 | `:1620-1644` | persist error toast |
 | `:1646-1689` | mobile 調整（@600px） |
+| `:1752-1918` | 相談テンプレート（Feature 23）: `.template-section` / `.template-button`（既存 `.category-button` と同等の見た目）/ `.template-confirm-modal*`。新規 CSS 変数を追加せず既存テーマ変数のみ使用し全5テーマで自動整合（[[ui-templates]] / [[ui-template-confirm]]） |
 
 ## 重要な変数・パターン
 
@@ -44,8 +45,8 @@ tags: [frontend, css, style, theme]
 
 - [[theming-system]] — テーマ追加・SVG filter の意図
 - [[frontend-entry]] — `<filter>` の SVG 本体
-- 各画面: [[ui-onboarding]] / [[ui-history]] / [[ui-resume]] / [[ui-summary]] / [[ui-emotion]]
+- 各画面: [[ui-onboarding]] / [[ui-history]] / [[ui-resume]] / [[ui-summary]] / [[ui-emotion]] / [[ui-templates]] / [[ui-template-confirm]]
 
 ## 出典
 
-- `C:\ConsultationApplication\public\style.css:1-1690`
+- `C:\ConsultationApplication\public\style.css:1-1918`
